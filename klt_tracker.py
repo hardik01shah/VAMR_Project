@@ -120,7 +120,7 @@ class KLT_Tracker:
 if __name__ == "__main__":
     
     tracker = KLT_Tracker()
-    images = [cv2.imread("kitti05/kitti/05/image_0/000000.png"), cv2.imread("kitti05/kitti/05/image_0/000001.png")]
+    images = [cv2.imread("data/kitti/05/image_0/000000.png"), cv2.imread("data/kitti/05/image_0/000001.png")]
     # tracker.harris_corner_det(images[0])
     new_points = tracker.lucas_kanade_tracker(images[0], images[1])
     
