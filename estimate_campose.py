@@ -41,9 +41,37 @@ class CamPoseEstimator:
         p_C1 = M1 @ np.vstack((points3d, np.ones((1, points3d.shape[1]))))
         mask = p_C1[2, :] > 0
         points3d = points3d[:, mask]
+        points1 = points1[:, mask]
+        points2 = points2[:, mask]
 
         p_C2 = M2 @ np.vstack((points3d, np.ones((1, points3d.shape[1]))))
         mask = p_C2[2, :] > 0
         points3d = points3d[:, mask]
+        points1 = points1[:, mask]
+        points2 = points2[:, mask]
 
-        return points3d.T
+        return points3d.T, points1.T, points2.T
+    
+    def estimatePosePnP(self, points3d, points2d, camera_matrix):
+        assert len(points3d.shape) == 2 and points3d.shape[1] == 3
+        assert len(points2d.shape) == 2 and points2d.shape[1] == 2
+
+        # solvePnPRansac requires the points to be in the shape of (N, 2) and (N, 3) and type of np.float32
+        # https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#ga50620f0e26e02caa2e9adc07b5fbf24e
+        points3d = (points3d).astype(np.float32)
+        points2d = (points2d).astype(np.float32)
+
+        print(points3d.shape)
+        print(points2d.shape)
+
+        # Estimate the pose using PnP
+        _, rvec, tvec, inliers = cv2.solvePnPRansac(
+            objectPoints = points3d,
+            imagePoints = points2d,
+            cameraMatrix = camera_matrix,
+            distCoeffs=None,
+            reprojectionError=5.0,
+            iterationsCount=1000000,
+            confidence=0.9999)
+        R = cv2.Rodrigues(rvec)[0]
+        return R, tvec, inliers

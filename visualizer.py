@@ -41,7 +41,7 @@ class Visualizer:
                      'c-', linewidth=1.5)
         plt.show()
     
-    def view3DPoints(self, points3d, R, t):
+    def view3DPoints(self, points3d, cam_poses):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
@@ -50,7 +50,11 @@ class Visualizer:
         ax.set_zlim3d(-100,100)
         
         ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], s=1, c='r', marker='o')
-        self.PlotCamera(R, t, ax=ax)
+        for i in range(len(cam_poses)):
+            M = cam_poses[i]
+            R = M[:,:3]
+            t = M[:,3]
+            self.PlotCamera(R, t, ax=ax)
         plt.show()
     
     def PlotCamera(self, R, t, ax=None, scale=1.0, color='b'):

@@ -75,3 +75,19 @@ class FeatureExtractor:
         points2 = points2[good]
 
         return points1, points2
+    
+    def klt_tracker_masked(self, image1, image2, points1):
+        """Track the points using KLT tracker with bidirectional error check
+        """
+        points1 = np.array(points1, dtype=np.float32)
+
+        points2, status, err = cv2.calcOpticalFlowPyrLK(image1, image2, points1, None, **self.lk_params)
+        points1r, status, err = cv2.calcOpticalFlowPyrLK(image2, image1, points2, None, **self.lk_params)
+
+        d = abs(points1 - points1r).reshape(-1, 2).max(-1)
+        good = d < 30
+
+        # points1 = points1[good]
+        # points2 = points2[good]
+
+        return points2, good

@@ -75,10 +75,29 @@ if __name__ == "__main__":
     # Triangulate the points
     M1 = np.eye(3, 4)
     M2 = np.hstack((R, t))
-    points3d = cam_pose_estimator.triangulatePoints(inlier_points1, inlier_points2, K, M1, M2)
+    points3d, inlier_points1, inlier_points2 = cam_pose_estimator.triangulatePoints(inlier_points1, inlier_points2, K, M1, M2)
 
     # Visualize the 3D points
-    visualizer.view3DPoints(points3d, R, t)
+    cam_poses = [M1, M2]
+    visualizer.view3DPoints(points3d, cam_poses)
+
+    # Estimate the pose of third frame using PnP
+    image_3 = dataset_loader.getFrame(2)
+
+    # Extract features using KLTracker
+    inlier_points3, good_mask = feature_extractor.klt_tracker_masked(image_2, image_3, inlier_points2)
+    assert len(good_mask) == len(inlier_points2)
+    inlier_points2 = inlier_points2[good_mask]
+    inlier_points3 = inlier_points3[good_mask]
+
+    R, t, inliers = cam_pose_estimator.estimatePosePnP(points3d, inlier_points3, K)
+    points3d = points3d[inliers.ravel()]
+    
+    # Visualize the 3D points
+    M3 = np.hstack((R, t))
+    cam_poses = [M1, M2, M3]
+    visualizer.view3DPoints(points3d, cam_poses)
+    
 
 
 
