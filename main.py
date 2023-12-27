@@ -1,9 +1,7 @@
 import numpy as np
 import cv2
 import os
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.use('QtAgg')
+
 
 from data_loader import KittiLoader, MalagaLoader, ParkingLoader
 from klt_tracker import KLT_Tracker

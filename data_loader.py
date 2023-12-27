@@ -14,9 +14,11 @@ class KittiLoader:
 
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*.png"))
+        self.image_list.sort()
 
     def getFrame(self, frame_id, grayscale=True):
-        image_file = self.image_list[frame_id]
+        image_file = self.image_list[frame_id]    
+        print(image_file)    
         if grayscale:
             image = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
         else:
@@ -43,6 +45,8 @@ class MalagaLoader:
 
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*left.jpg"))
+        self.image_list.sort()
+
 
     def getFrame(self, frame_id, grayscale=True):
         image_file = self.image_list[frame_id]
@@ -73,6 +77,7 @@ class ParkingLoader:
 
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*.png"))
+        self.image_list.sort()
 
     def getFrame(self, frame_id, grayscale=True):
         image_file = self.image_list[frame_id]
