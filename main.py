@@ -1,13 +1,15 @@
 import numpy as np
 import cv2
 import os
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('QtAgg')
 
-from data_loader import DatasetLoader
+from data_loader import KittiLoader, MalagaLoader, ParkingLoader
 from klt_tracker import KLT_Tracker
 from visualizer import Visualizer
 from feature_extractor import FeatureExtractor
 from estimate_campose import CamPoseEstimator
-
 
 if __name__ == "__main__":
 
@@ -15,24 +17,39 @@ if __name__ == "__main__":
 
     dataset_dir = os.path.join(cur_dir, "data")
     dataset_name = "kitti"
-    sequence_name = "05"
     frame_id = 0
 
-    # Load the dataset
-    dataset_loader = DatasetLoader(dataset_dir, dataset_name, sequence_name)
-    image = dataset_loader.getFrame(frame_id)
-    K = dataset_loader.getCamera()
+    # Load the datasets 
+    if dataset_name == "kitti":
+        dataset_loader = KittiLoader(dataset_dir)
+        image = dataset_loader.getFrame(frame_id)
+        K = dataset_loader.getCamera()
+
+    elif dataset_name == "malaga":
+        dataset_loader = MalagaLoader(dataset_dir)
+        image = dataset_loader.getFrame(frame_id)
+        K = dataset_loader.getCamera()
+
+    elif dataset_name == "parking":
+        dataset_loader = ParkingLoader(dataset_dir)
+        image = dataset_loader.getFrame(frame_id)
+        K = dataset_loader.getCamera()
+
     print(f"Loaded camera matrix:\n{K}")
-    
+
     # Visualize the points
     visualizer = Visualizer()
     visualizer.viewImage(image)
+
+    print("Loaded visualizer")
 
     # Extract features
     feature_extractor = FeatureExtractor()
     # points = feature_extractor.extractHarrisCorners(image)
     points = feature_extractor.extractShiTomasiCorners(image)
     # points = feature_extractor.extractSiftFeatures(image)
+
+    print("Feature extraction done")
 
     # Visualize the points
     visualizer.viewPoints(image, points)
@@ -48,7 +65,6 @@ if __name__ == "__main__":
     # Visualize the tracks
     visualizer.viewTracks(image_1, image_2, points1, points2)
     
-
     # Match features
     keypoints_1, descriptors_1 = feature_extractor.extractSiftFeatures(image_1, descibe=True)
     keypoints_2, descriptors_2 = feature_extractor.extractSiftFeatures(image_2, descibe=True)
