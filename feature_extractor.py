@@ -3,9 +3,24 @@ import cv2
 from copy import copy, deepcopy
 
 class FeatureExtractor:
-    def __init__(self):
-        self.extractor_type = "sift" # ["sift", "surf", "orb", "fast", "harris"]
+    def __init__(self, extractor_type="sift"):
+        self.extractor_type = extractor_type # ["sift", "surf", "orb", "fast", "harris"]
         self.lk_params = dict(winSize=(31, 31), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.03))
+
+        self.extract = None
+        if self.extractor_type == "sift":
+            self.extract = self.extractSiftFeatures
+            self.match = self.matchSiftFeatures
+
+        elif self.extractor_type == "harris":
+            self.extract = self.extractHarrisCorners
+            self.match = None
+
+        elif self.extractor_type == "shi-tomasi":
+            self.extract = self.extractShiTomasiCorners
+            self.match = None
+
+        self.track = self.klt_tracker_masked
     
     def extractHarrisCorners(self, image):
         """Extract Harris corners from the image with subpixel accuracy
@@ -25,15 +40,21 @@ class FeatureExtractor:
         corners = cv2.cornerSubPix(gray, np.float32(centroids), (5, 5), (-1, -1), criteria)
         return corners
     
-    def extractShiTomasiCorners(self, image):
+    def extractShiTomasiCorners(self, image, curr_kp=[], mask_radius=7):
         """Extract Shi-Tomasi corners from the image with subpixel accuracy
         """
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         else:
             gray = copy(image)
+
+        # mask out the current keypoints to avoid overlapping features
+        mask = np.ones(gray.shape, dtype=np.uint8) * 255
+        for i in range(len(curr_kp)):
+            cv2.circle(mask, (int(curr_kp[i][0]), int(curr_kp[i][1])), mask_radius, 0, -1)
+
         gray = np.float32(gray)
-        corners = cv2.goodFeaturesToTrack(gray, maxCorners=1000, qualityLevel=0.03, minDistance=7, blockSize=31)
+        corners = cv2.goodFeaturesToTrack(gray, maxCorners=1000, qualityLevel=0.03, minDistance=7, mask=mask, blockSize=31)
         corners = corners.reshape(corners.shape[0], corners.shape[2])
         return corners
     
@@ -87,7 +108,6 @@ class FeatureExtractor:
         d = abs(points1 - points1r).reshape(-1, 2).max(-1)
         good = d < 30
 
-        # points1 = points1[good]
-        # points2 = points2[good]
+        assert len(points1) == len(points2) == len(good)
 
         return points2, good
