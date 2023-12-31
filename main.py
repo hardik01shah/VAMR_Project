@@ -2,8 +2,7 @@ import numpy as np
 import cv2
 import os
 
-
-from data_loader import KittiLoader, MalagaLoader, ParkingLoader
+from data_loader import KittiLoader, MalagaLoader, ParkingLoader, OwnDataLoader
 from klt_tracker import KLT_Tracker
 from visualizer import Visualizer
 from feature_extractor import FeatureExtractor
@@ -14,7 +13,7 @@ if __name__ == "__main__":
     cur_dir = os.path.dirname(os.path.realpath(__file__))
 
     dataset_dir = os.path.join(cur_dir, "data")
-    dataset_name = "kitti"
+    dataset_name = "own"
     frame_id = 0
 
     # Load the datasets 
@@ -30,6 +29,11 @@ if __name__ == "__main__":
 
     elif dataset_name == "parking":
         dataset_loader = ParkingLoader(dataset_dir)
+        image = dataset_loader.getFrame(frame_id)
+        K = dataset_loader.getCamera()
+    
+    elif dataset_name == "own":
+        dataset_loader = OwnDataLoader(dataset_dir)
         image = dataset_loader.getFrame(frame_id)
         K = dataset_loader.getCamera()
 
