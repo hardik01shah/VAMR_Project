@@ -81,7 +81,7 @@ class FeatureExtractor:
                 good.append(m)
         return good
     
-    def klt_tracker(self, image1, image2, points1):
+    def klt_tracker(self, image1, image2, points1, max_bidrectional_error=30):
         """Track the points using KLT tracker with bidirectional error check
         """
         points1 = np.array(points1, dtype=np.float32)
@@ -97,7 +97,7 @@ class FeatureExtractor:
 
         return points1, points2
     
-    def klt_tracker_masked(self, image1, image2, points1):
+    def klt_tracker_masked(self, image1, image2, points1, max_bidrectional_error=30):
         """Track the points using KLT tracker with bidirectional error check
         """
         points1 = np.array(points1, dtype=np.float32)
@@ -106,7 +106,7 @@ class FeatureExtractor:
         points1r, status, err = cv2.calcOpticalFlowPyrLK(image2, image1, points2, None, **self.lk_params)
 
         d = abs(points1 - points1r).reshape(-1, 2).max(-1)
-        good = d < 30
+        good = d < np.inf
 
         assert len(points1) == len(points2) == len(good)
 
