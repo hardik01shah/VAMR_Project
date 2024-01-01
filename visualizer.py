@@ -143,7 +143,7 @@ class Visualizer:
 
         # 1. Image overlayed with triangulated keypoints and candidate keypoints
         ax = fig.add_subplot(221)
-        plt.title("Landmarks and Candidate Keypoints in Current Frame")
+        plt.title(f"Landmarks and Candidate Keypoints in Current Frame: {self.indx}")
         im = deepcopy(state.image)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         ax.imshow(im)
@@ -194,9 +194,40 @@ class Visualizer:
         ax = fig.add_subplot(246)
         plt.title("Trajectory of Last 20 Frames", fontsize=8)
         local_positions = positions[-20:]
-        ax.scatter(local_positions[:,0], local_positions[:,2], s=8, c='b', marker='o', facecolor=None)
+        ax.scatter(local_positions[:,0], local_positions[:,2], s=8, c='b', marker='x', facecolor=None)
         ax.set_aspect('equal')
         ax.set_adjustable('datalim')
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+
+        # plot the 3d points
+        p3d = state.landmarks
+        ax.scatter(p3d[:,0], p3d[:,2], s=4, marker='o', c='g', facecolor=None)
+        
+        xlim2 = ax.get_xlim()
+        ylim2 = ax.get_ylim()
+        xlim = np.array(xlim)
+        ylim = np.array(ylim)
+        if xlim2[0] < xlim[0]:
+            xlim[0] -= min(xlim[0] - xlim2[0], 40)
+        if xlim2[1] > xlim[1]:
+            xlim[1] += min(xlim2[1] - xlim[1], 40)
+        if ylim2[0] < ylim[0]:
+            ylim[0] -= min(ylim[0] - ylim2[0], 40)
+        if ylim2[1] > ylim[1]:
+            ylim[1] += min(ylim2[1] - ylim[1], 40)
+
+        # increase xlim and ylim by 30%
+        # xlim = np.array(xlim)
+        # ylim = np.array(ylim)
+        # xlen = xlim[1] - xlim[0]
+        # ylen = ylim[1] - ylim[0]
+        # xlim = xlim + np.array([-xlen*0.8, xlen*0.8])
+        # ylim = ylim + np.array([-ylen*0.8, ylen*0.8])
+        # xlim = tuple(xlim)
+        # ylim = tuple(ylim)
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
 
         # convert plot to image
         fig.canvas.draw()
