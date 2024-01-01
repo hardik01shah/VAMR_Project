@@ -1,6 +1,7 @@
 import os
 import glob
 import numpy as np
+import pandas as pd
 import cv2
 
 class KittiLoader:
@@ -19,7 +20,6 @@ class KittiLoader:
 
     def getFrame(self, frame_id, grayscale=True):
         image_file = self.image_list[frame_id]    
-        print(image_file)    
         if grayscale:
             image = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
         else:
@@ -91,9 +91,12 @@ class ParkingLoader:
         return image
     
     def getCamera(self):
-        with open(self.cam_calib_file, "r") as f:
-            P0 = np.array([[331.37, 0, 320], [0, 369.568, 240], [0, 0, 1]])
-            return P0  
+        # with open(self.cam_calib_file, "r") as f:
+        #     P0 = np.array([[331.37, 0, 320], [0, 369.568, 240], [0, 0, 1]])
+        #     return P0  
+        data = pd.read_csv(self.cam_calib_file, header=None)
+        P0 = data.to_numpy()[:3, :3]
+        return P0
 
 class OwnDataLoader:
     def __init__(self, dataset_dir):
