@@ -22,6 +22,11 @@ class VO_Pipeline:
         self.pose_estimator = CamPoseEstimator(self.K)
 
         self.state = None
+
+        # parameters for the pipeline
+        self.min_track_length = 3
+        self.angle_threshold = 0.5
+        self.mask_radius = 7
     
     def vo_initilization(self, frame_id_1, frame_id_2,):
         # get the first two frames
@@ -126,7 +131,9 @@ class VO_Pipeline:
             candidate_kp_first=candidate_kp_first,
             kp_first_pose=first_pose,
             kp_track_length=track_length,
-            M2=M2)
+            M2=M2,
+            min_track_length=self.min_track_length,
+            angle_threshold=self.angle_threshold)
         
         # add new landmarks to the state
         self.state.landmarks = np.append(landmarks, extended_tracks["landmarks"], axis=0)
@@ -139,7 +146,7 @@ class VO_Pipeline:
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)
-        new_kp = self.continuous_extractor.extract(image, curr_kp=current_keypoints)
+        new_kp = self.continuous_extractor.extract(image, curr_kp=current_keypoints, mask_radius=self.mask_radius)
         new_first_pose = []
         for i in range(len(new_kp)):
             new_first_pose.append(M2)
@@ -163,7 +170,7 @@ class VO_Pipeline:
     def run(self):
         total_frames = self.dataloader.length
         init_frame_1 = 0
-        init_frame_2 = 2 #3
+        init_frame_2 = 5 # 3 for parking, 2 for malaga and kitti
 
         # Initialize the pipeline
         self.vo_initilization(init_frame_1, init_frame_2)
@@ -180,6 +187,8 @@ if __name__ == "__main__":
 
     dataset_dir = os.path.join(cur_dir, "data")
     dataset_name = "parking"
+    # dataset_name = "malaga"
+    # dataset_name = "kitti"
     sequence_name = "05"
 
     # Load the datasets 
