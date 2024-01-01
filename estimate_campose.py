@@ -107,7 +107,7 @@ class CamPoseEstimator:
         # return the points in the shape of (N, 3) and (N, 2)
         return points3d.T, mask
     
-    def triangulateCandidatePoints(self, candidate_kp, candidate_kp_first, kp_first_pose, kp_track_length, M2):
+    def triangulateCandidatePoints(self, candidate_kp, candidate_kp_first, kp_first_pose, kp_track_length, M2, min_track_length, angle_threshold):
         """Triangulate the candidate keypoints of the current frame.
         Args:
             candidate_kp: (N, 2) coordinates of the candidate keypoints in the current frame
@@ -120,7 +120,7 @@ class CamPoseEstimator:
         assert len(candidate_kp) == len(candidate_kp_first) == len(kp_first_pose) == len(kp_track_length)
 
         # divide the candidate keypoints into two groups based on the number of frames they have been tracked
-        triangulate_mask = kp_track_length >= 3 # 2
+        triangulate_mask = kp_track_length >= min_track_length # 3
 
         kp_tmp = candidate_kp[triangulate_mask]             # Try triangulating
         kp_first_tmp = candidate_kp_first[triangulate_mask]
@@ -161,8 +161,8 @@ class CamPoseEstimator:
                 p3d = points3d[j]
                 angle = self.getAngleBetweenBearingVectors(p3d, M1, M2)
                 # print(angle)
-                if angle > 4:  # 4
-                    print(angle)
+                if angle > angle_threshold:  # 4
+                    # print(angle)
                     landmarks = np.append(landmarks, p3d.reshape(1,-1), axis=0)
                     landmarks_kp = np.append(landmarks_kp, m1_kps[j].reshape(1,-1), axis=0)
                 else:
@@ -198,7 +198,7 @@ class CamPoseEstimator:
             imagePoints = points2d,
             cameraMatrix = self.K,
             distCoeffs=None,
-            reprojectionError=5.0,
+            reprojectionError=2.0,
             iterationsCount=1000000,
             confidence=0.9999)
         R = cv2.Rodrigues(rvec)[0]
