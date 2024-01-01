@@ -14,6 +14,7 @@ class KittiLoader:
 
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*.png"))
+        self.length = len(self.image_list)
         self.image_list.sort()
 
     def getFrame(self, frame_id, grayscale=True):
@@ -45,6 +46,7 @@ class MalagaLoader:
 
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*left.jpg"))
+        self.length = len(self.image_list)
         self.image_list.sort()
 
 
@@ -77,6 +79,7 @@ class ParkingLoader:
 
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*.png"))
+        self.length = len(self.image_list)
         self.image_list.sort()
 
     def getFrame(self, frame_id, grayscale=True):
@@ -104,6 +107,7 @@ class OwnDataLoader:
         # self.length = len(glob.glob(os.path.join(self.image_dir, "*.png")))
         self.image_list = glob.glob(os.path.join(self.image_dir, "*.jpg"))
         self.image_list.sort()
+        self.length = len(self.image_list)
         print(self.image_list)
 
     def getFrame(self, frame_id, grayscale=True):

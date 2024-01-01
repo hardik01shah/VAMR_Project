@@ -3,14 +3,15 @@ import os
 import numpy as np
 from tqdm import tqdm
 from copy import deepcopy
-from data_loader import DatasetLoader
+# from data_loader import DatasetLoader
+from data_loader import KittiLoader, MalagaLoader, ParkingLoader, OwnDataLoader
 from frame_state import FrameState, KeyPoint
 from feature_extractor import FeatureExtractor
 from visualizer import Visualizer
 from estimate_campose import CamPoseEstimator
 
 class VO_Pipeline:
-    def __init__(self, dataloader: DatasetLoader):
+    def __init__(self, dataloader):
         self.dataloader = dataloader
         self.init_extractor = FeatureExtractor(extractor_type="sift")
         self.continuous_extractor = FeatureExtractor(extractor_type="shi-tomasi")
@@ -178,10 +179,16 @@ if __name__ == "__main__":
     cur_dir = os.path.dirname(os.path.realpath(__file__))
 
     dataset_dir = os.path.join(cur_dir, "data")
-    dataset_name = "kitti"
+    dataset_name = "parking"
     sequence_name = "05"
 
+    # Load the datasets 
+    if dataset_name == "kitti": dataloader = KittiLoader(dataset_dir)
+    elif dataset_name == "malaga": dataloader = MalagaLoader(dataset_dir)
+    elif dataset_name == "parking": dataloader = ParkingLoader(dataset_dir)
+    elif dataset_name == "own": dataloader = OwnDataLoader(dataset_dir)
+    
     # Load the dataset
-    dataloader = DatasetLoader(dataset_dir, dataset_name, sequence_name)
+    # dataloader = DatasetLoader(dataset_dir, dataset_name, sequence_name)
     vo_pipeline = VO_Pipeline(dataloader)
     vo_pipeline.run()

@@ -160,8 +160,9 @@ class CamPoseEstimator:
             for j in range(len(points3d)):
                 p3d = points3d[j]
                 angle = self.getAngleBetweenBearingVectors(p3d, M1, M2)
-                print(angle)
-                if angle > 3:  # 4
+                # print(angle)
+                if angle > 4:  # 4
+                    print(angle)
                     landmarks = np.append(landmarks, p3d.reshape(1,-1), axis=0)
                     landmarks_kp = np.append(landmarks_kp, m1_kps[j].reshape(1,-1), axis=0)
                 else:
