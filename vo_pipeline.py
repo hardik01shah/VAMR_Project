@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from copy import deepcopy
 import yaml
+import argparse
 # from data_loader import DatasetLoader
 from data_loader import KittiLoader, MalagaLoader, ParkingLoader, OwnDataLoader
 from frame_state import FrameState, KeyPoint
@@ -12,10 +13,10 @@ from visualizer import Visualizer
 from estimate_campose import CamPoseEstimator
 
 class VO_Pipeline:
-    def __init__(self, dataloader):
+    def __init__(self, dataloader, config_file):
 
         # Extracting parameters for the pipelines
-        with open("params.yaml", "r") as f:
+        with open(config_file, "r") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
 
         feature_extractor_params = config["feature_extractor"]
@@ -198,11 +199,18 @@ class VO_Pipeline:
 if __name__ == "__main__":
     cur_dir = os.path.dirname(os.path.realpath(__file__))
 
-    dataset_dir = os.path.join(cur_dir, "data")
-    # dataset_name = "parking"
-    # dataset_name = "malaga"
-    dataset_name = "kitti"
-    sequence_name = "05"
+    # Create argparser
+    parser = argparse.ArgumentParser(description="Visual Odometry Pipeline")
+    parser.add_argument("--dataset_dir", type=str, default=os.path.join(cur_dir, "data"), help="Path to the dataset directory")
+    parser.add_argument("--dataset_name", type=str, default="kitti", help="Name of the dataset")
+    parser.add_argument("--sequence_name", type=str, default="05", help="Name of the sequence")
+    parser.add_argument("--config", type=str, default="params.yaml", help="Path to the config file")
+    args = parser.parse_args()
+
+    dataset_dir = args.dataset_dir
+    dataset_name = args.dataset_name
+    sequence_name = args.sequence_name
+    config_file = args.config
 
     # Load the datasets 
     if dataset_name == "kitti": dataloader = KittiLoader(dataset_dir)
@@ -212,5 +220,5 @@ if __name__ == "__main__":
     
     # Load the dataset
     # dataloader = DatasetLoader(dataset_dir, dataset_name, sequence_name)
-    vo_pipeline = VO_Pipeline(dataloader)
+    vo_pipeline = VO_Pipeline(dataloader, config_file)
     vo_pipeline.run()
