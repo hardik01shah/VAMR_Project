@@ -2,8 +2,14 @@ import numpy as np
 import cv2
 
 class CamPoseEstimator:
-    def __init__(self, camera_matrix):
+    def __init__(self, camera_matrix, params=None):
         self.K = camera_matrix
+
+        # For PnP Ransac
+        self.reproj_error = params["reprojection_error"]
+        self.iterations = params["iterations_count"]
+        self.confidence = params["confidence"]
+        self.dist_coeffs = params["dist_coeffs"]
 
     def estimatePose(self, points1, points2):
         """Estimate the pose from 2D-2D correspondences using RANSAC.

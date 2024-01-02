@@ -3,6 +3,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 from copy import deepcopy
+import yaml
 # from data_loader import DatasetLoader
 from data_loader import KittiLoader, MalagaLoader, ParkingLoader, OwnDataLoader
 from frame_state import FrameState, KeyPoint
@@ -12,22 +13,34 @@ from estimate_campose import CamPoseEstimator
 
 class VO_Pipeline:
     def __init__(self, dataloader):
+
+        # Extracting parameters for the pipelines
+        with open("params.yaml", "r") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+
+        feature_extractor_params = config["feature_extractor"]
+        pose_estimator_params = config["pose_estimator"]
+
+        self.min_track_length = config["min_track_length"]
+        self.angle_threshold = config["angle_threshold"]
+        self.mask_radius = config["mask_radius"]
+        self.init_frame_1 = config["init_frame_1"]
+        self.init_frame_2 = config["init_frame_2"]
+        self.dataset_name = config["dataset_name"]
+        self.sequence_name = config["sequence_name"]
+
         self.dataloader = dataloader
-        self.init_extractor = FeatureExtractor(extractor_type="sift")
-        self.continuous_extractor = FeatureExtractor(extractor_type="shi-tomasi")
+        self.init_extractor = FeatureExtractor(extractor_type="sift", params=feature_extractor_params)
+        self.continuous_extractor = FeatureExtractor(extractor_type="harris", params=feature_extractor_params)
         self.visualizer = Visualizer()
 
         # get camera matrix
         self.K = self.dataloader.getCamera()
-        self.pose_estimator = CamPoseEstimator(self.K)
+        self.pose_estimator = CamPoseEstimator(self.K, pose_estimator_params)
 
         self.state = None
 
-        # parameters for the pipeline
-        self.min_track_length = 3
-        self.angle_threshold = 0.5
-        self.mask_radius = 7
-    
+
     def vo_initilization(self, frame_id_1, frame_id_2,):
         # get the first two frames
         image_1 = self.dataloader.getFrame(frame_id_1)
@@ -170,7 +183,7 @@ class VO_Pipeline:
     def run(self):
         total_frames = self.dataloader.length
         init_frame_1 = 0
-        init_frame_2 = 5 # 3 for parking, 2 for malaga and kitti
+        init_frame_2 = 8 # 3 for parking, 2 for malaga and kitti
 
         # Initialize the pipeline
         self.vo_initilization(init_frame_1, init_frame_2)
@@ -186,9 +199,9 @@ if __name__ == "__main__":
     cur_dir = os.path.dirname(os.path.realpath(__file__))
 
     dataset_dir = os.path.join(cur_dir, "data")
-    dataset_name = "parking"
+    # dataset_name = "parking"
     # dataset_name = "malaga"
-    # dataset_name = "kitti"
+    dataset_name = "kitti"
     sequence_name = "05"
 
     # Load the datasets 
