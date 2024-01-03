@@ -209,13 +209,13 @@ class Visualizer:
         xlim = np.array(xlim)
         ylim = np.array(ylim)
         if xlim2[0] < xlim[0]:
-            xlim[0] -= min(xlim[0] - xlim2[0], 40)
+            xlim[0] -= min(xlim[0] - xlim2[0], 10)
         if xlim2[1] > xlim[1]:
-            xlim[1] += min(xlim2[1] - xlim[1], 40)
+            xlim[1] += min(xlim2[1] - xlim[1], 10)
         if ylim2[0] < ylim[0]:
-            ylim[0] -= min(ylim[0] - ylim2[0], 40)
+            ylim[0] -= min(ylim[0] - ylim2[0], 10)
         if ylim2[1] > ylim[1]:
-            ylim[1] += min(ylim2[1] - ylim[1], 40)
+            ylim[1] += min(ylim2[1] - ylim[1], 10)
 
         # increase xlim and ylim by 30%
         # xlim = np.array(xlim)
@@ -237,6 +237,6 @@ class Visualizer:
 
         cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
-        plt.savefig("plots/vo_pipeline_state_{}.png".format(self.indx))
+        plt.savefig("malaga/vo_pipeline_state_{}.png".format(self.indx))
         self.indx += 1
         plt.close(fig)

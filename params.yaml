@@ -1,6 +1,6 @@
 min_track_length: 3
 angle_threshold: 0.5
-mask_radius: 5
+mask_radius: 10
 
 init_frame_1: 0
 init_frame_2: 5 # 3 for parking, 2 for malaga and kitti
@@ -29,18 +29,18 @@ feature_extractor:
     thresh: 0.1 # Threshold for the Harris detector response
 
   shi_tomasi:
-    maxCorners: 1000
+    maxCorners: 2000
     qualityLevel: 0.03
     minDistance: 7
     blockSize: 31
 
   sift:
-    nfeatures: 1000 
+    nfeatures: 2200 
     k: 2 # Number of best matches to retain
     dist_threshold: 0.8 # Threshold for the distance between matched descriptors.
 
   klt:
-    winSize: 31
+    winSize: 15
     maxLevel: 3
     criteria:
       type: cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT
