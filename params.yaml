@@ -5,7 +5,7 @@ mask_radius: 5
 init_frame_1: 0
 init_frame_2: 5 # 3 for parking, 2 for malaga and kitti
 
-dataset_name: "kitti" # "malaga" or "kitti" or "parking"
+dataset_name: "parking" # "malaga" or "kitti" or "parking"
 sequence_name: "05"
 
 # For PnP Ransac

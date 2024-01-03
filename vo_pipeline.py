@@ -32,7 +32,7 @@ class VO_Pipeline:
 
         self.dataloader = dataloader
         self.init_extractor = FeatureExtractor(extractor_type="sift", params=feature_extractor_params)
-        self.continuous_extractor = FeatureExtractor(extractor_type="harris", params=feature_extractor_params)
+        self.continuous_extractor = FeatureExtractor(extractor_type="sift", params=feature_extractor_params)
         self.visualizer = Visualizer()
 
         # get camera matrix
