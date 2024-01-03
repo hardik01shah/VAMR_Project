@@ -3,7 +3,7 @@ angle_threshold: 0.5
 mask_radius: 5
 
 init_frame_1: 0
-init_frame_2: 5 # 3 for parking, 2 for malaga and kitti
+init_frame_2: 10 # 3 for parking, 2 for malaga and kitti
 
 dataset_name: "kitti" # "malaga" or "kitti" or "parking"
 sequence_name: "05"
@@ -17,7 +17,7 @@ pose_estimator:
 
 feature_extractor:
   init_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris", "shi-tomasi"]
-  cont_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris" "shi-tomasi"]
+  cont_extractor_type: "shi-tomasi" # ["sift", "surf", "orb", "fast", "harris" "shi-tomasi"]
   harris:
     winSize: 5
     zeroZone: -1 # -1 if we don't want to reject anything
