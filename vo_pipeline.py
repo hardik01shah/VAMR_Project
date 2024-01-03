@@ -19,6 +19,7 @@ class VO_Pipeline:
         with open(config_file, "r") as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
 
+        self.params = config
         feature_extractor_params = config["feature_extractor"]
         pose_estimator_params = config["pose_estimator"]
 
@@ -31,8 +32,10 @@ class VO_Pipeline:
         self.sequence_name = config["sequence_name"]
 
         self.dataloader = dataloader
-        self.init_extractor = FeatureExtractor(extractor_type="sift", params=feature_extractor_params)
-        self.continuous_extractor = FeatureExtractor(extractor_type="sift", params=feature_extractor_params)
+        init_extractor_type = feature_extractor_params["init_extractor_type"]
+        cont_extractor_type = feature_extractor_params["cont_extractor_type"]
+        self.init_extractor = FeatureExtractor(extractor_type=init_extractor_type, params=feature_extractor_params)
+        self.continuous_extractor = FeatureExtractor(extractor_type=cont_extractor_type, params=feature_extractor_params)
         self.visualizer = Visualizer()
 
         # get camera matrix
@@ -183,8 +186,8 @@ class VO_Pipeline:
 
     def run(self):
         total_frames = self.dataloader.length
-        init_frame_1 = 0
-        init_frame_2 = 8 # 3 for parking, 2 for malaga and kitti
+        init_frame_1 = self.params["init_frame_1"]
+        init_frame_2 = self.params["init_frame_2"] # 3 for parking, 2 for malaga and kitti
 
         # Initialize the pipeline
         self.vo_initilization(init_frame_1, init_frame_2)

@@ -45,23 +45,28 @@ class Visualizer:
     
     def viewTracksCandidates(self, image1, image2, points1, points2, points2_um):
         image2 = cv2.cvtColor(image2, cv2.COLOR_RGB2BGR)
+        fig = plt.figure(figsize=(12,6))
+        plt.title("Matched and Unmatched Keypoints for VO initialization")
         plt.imshow(image2)
-        plt.scatter(points2[:,0], points2[:,1], s=5, c='y', marker='x', linewidths=0.5)
-        plt.scatter(points2_um[:,0], points2_um[:,1], s=5, c='r', marker='x', linewidths=0.5)
+        plt.scatter(points2[:,0], points2[:,1], s=10, c='y', marker='x', linewidths=0.5)
+        plt.scatter(points2_um[:,0], points2_um[:,1], s=10, c='r', marker='x', linewidths=0.5)
+        plt.legend(["Matched Keypoints", "Unmatched Keypoints"], loc="lower right", fontsize=8)
 
         for i in range(len(points2)):
             plt.plot([points1[i,0], points2[i,0]], 
                      [points1[i,1], points2[i,1]], 
-                     'g--', linewidth=1.5)
+                     'g--', linewidth=1.0)
         plt.show()
     
     def view3DPoints(self, points3d, cam_poses):
-        fig = plt.figure()
+        
+        fig = plt.figure(figsize=(12,6))
+        plt.title("Camera pose and triangulated 3D points")
         ax = fig.add_subplot(111, projection='3d')
 
-        ax.set_xlim3d(-100,100)
-        ax.set_ylim3d(-100,100)
-        ax.set_zlim3d(-100,100)
+        ax.set_xlim3d(-10,10)
+        ax.set_ylim3d(-10,10)
+        ax.set_zlim3d(-10,10)
         
         ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], s=1, c='r', marker='o')
         for i in range(len(cam_poses)):
@@ -209,13 +214,13 @@ class Visualizer:
         xlim = np.array(xlim)
         ylim = np.array(ylim)
         if xlim2[0] < xlim[0]:
-            xlim[0] -= min(xlim[0] - xlim2[0], 40)
+            xlim[0] -= min(xlim[0] - xlim2[0], 10)
         if xlim2[1] > xlim[1]:
-            xlim[1] += min(xlim2[1] - xlim[1], 40)
+            xlim[1] += min(xlim2[1] - xlim[1], 10)
         if ylim2[0] < ylim[0]:
-            ylim[0] -= min(ylim[0] - ylim2[0], 40)
+            ylim[0] -= min(ylim[0] - ylim2[0], 10)
         if ylim2[1] > ylim[1]:
-            ylim[1] += min(ylim2[1] - ylim[1], 40)
+            ylim[1] += min(ylim2[1] - ylim[1], 10)
 
         # increase xlim and ylim by 30%
         # xlim = np.array(xlim)
@@ -237,6 +242,6 @@ class Visualizer:
 
         cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
-        plt.savefig("plots/vo_pipeline_state_{}.png".format(self.indx))
+        plt.savefig("malaga/vo_pipeline_state_{}.png".format(self.indx))
         self.indx += 1
         plt.close(fig)

@@ -71,10 +71,10 @@ class FeatureExtractor:
         """Extract Shi-Tomasi corners from the image with subpixel accuracy
         """
         
-        maxCorners = self.params["shi_tomasi"]["maxCorners"]
-        qualityLevel = self.params["shi_tomasi"]["qualityLevel"]
-        minDistance = self.params["shi_tomasi"]["minDistance"]
-        blockSize = self.params["shi_tomasi"]["blockSize"]
+        maxCorners = self.params["shi-tomasi"]["maxCorners"]
+        qualityLevel = self.params["shi-tomasi"]["qualityLevel"]
+        minDistance = self.params["shi-tomasi"]["minDistance"]
+        blockSize = self.params["shi-tomasi"]["blockSize"]
         
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

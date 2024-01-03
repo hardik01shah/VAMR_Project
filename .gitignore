@@ -2,3 +2,7 @@ data/*
 __pycache__/*
 plots/*
 vamr1.yaml
+malaga/*
+kitti/*
+parking/*
+own/*
