@@ -242,6 +242,6 @@ class Visualizer:
 
         cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
-        plt.savefig("malaga/vo_pipeline_state_{}.png".format(self.indx))
+        plt.savefig("own/vo_pipeline_state_{}.png".format(self.indx))
         self.indx += 1
         plt.close(fig)
