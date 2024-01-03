@@ -3,9 +3,9 @@ angle_threshold: 0.5
 mask_radius: 5
 
 init_frame_1: 0
-init_frame_2: 5 # 3 for parking, 2 for malaga and kitti
+init_frame_2: 8 # 3 for parking, 2 for malaga and kitti
 
-dataset_name: "kitti" # "malaga" or "kitti" or "parking"
+dataset_name: "parking" # "malaga" or "kitti" or "parking"
 sequence_name: "05"
 
 # For PnP Ransac
@@ -37,7 +37,7 @@ feature_extractor:
     blockSize: 31
 
   sift:
-    nfeatures: 2000 
+    nfeatures: 1000 
     k: 2 # Number of best matches to retain
     dist_threshold: 0.8 # Threshold for the distance between matched descriptors.
 

@@ -111,7 +111,6 @@ class OwnDataLoader:
         self.image_list = glob.glob(os.path.join(self.image_dir, "*.jpg"))
         self.image_list.sort()
         self.length = len(self.image_list)
-        print(self.image_list)
 
     def getFrame(self, frame_id, grayscale=True):
         image_file = self.image_list[frame_id]

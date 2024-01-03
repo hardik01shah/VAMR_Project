@@ -32,7 +32,7 @@ class VideoProcessor:
 
 if __name__ == "__main__":
     cur_dir = os.path.dirname(os.path.realpath(__file__))
-    image_dir = cur_dir + "/malaga"
-    output_video_path = cur_dir + "/malaga.mp4"
+    image_dir = cur_dir + "/parking"
+    output_video_path = cur_dir + "/parking.mp4"
     video_processor = VideoProcessor(output_video_path)
     video_processor.process_video(image_dir)

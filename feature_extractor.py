@@ -56,14 +56,14 @@ class FeatureExtractor:
         corners = cv2.cornerSubPix(gray, np.float32(centroids), (winSize,winSize), (zeroZone,zeroZone), criteria)   
 
         # mask out the current keypoints to avoid overlapping features
-        mask = np.ones(gray.shape, dtype=np.uint8) * 255
-        for i in range(len(curr_kp)):
-            cv2.circle(mask, (int(curr_kp[i][0]), int(curr_kp[i][1])), mask_radius, 0, -1)
+        # mask = np.ones(gray.shape, dtype=np.uint8) * 255
+        # for i in range(len(curr_kp)):
+        #     cv2.circle(mask, (int(curr_kp[i][0]), int(curr_kp[i][1])), mask_radius, 0, -1)
 
-        corners_int = corners.astype(np.int32) - 1
-        corners = corners[mask[corners_int[:, 1], corners_int[:, 0]] == 255]
+        # corners_int = corners.astype(np.int32) - 1
+        # corners = corners[mask[corners_int[:, 1], corners_int[:, 0]] == 255]
 
-        print(corners.shape)   
+        # print(corners.shape)   
 
         return corners
     
@@ -91,13 +91,18 @@ class FeatureExtractor:
         corners = corners.reshape(corners.shape[0], corners.shape[2])
         return corners
     
-    def extractSiftFeatures(self, image, descibe=False):
+    def extractSiftFeatures(self, image, descibe=False, curr_kp=[], mask_radius=7):
         """Extract SIFT features from the image
         """
         nfeatures = self.params["sift"]["nfeatures"]
         
         sift = cv2.SIFT_create(nfeatures)
-        keypoints, descriptors = sift.detectAndCompute(image, None)
+
+        mask = np.ones(image.shape, dtype=np.uint8) * 255
+        for i in range(len(curr_kp)):
+            cv2.circle(mask, (int(curr_kp[i][0]), int(curr_kp[i][1])), mask_radius, 0, -1)
+
+        keypoints, descriptors = sift.detectAndCompute(image, mask=mask)
         keypoints = cv2.KeyPoint_convert(keypoints)
 
         if descibe:
