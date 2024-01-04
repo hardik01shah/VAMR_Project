@@ -7,3 +7,4 @@ kitti/*
 parking/*
 own/*
 *.mp4
+.vscode/settings.json
