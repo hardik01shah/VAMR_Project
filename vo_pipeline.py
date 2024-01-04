@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_dir", type=str, default=os.path.join(cur_dir, "data"), help="Path to the dataset directory")
     parser.add_argument("--dataset_name", type=str, default="kitti", help="Name of the dataset")
     parser.add_argument("--sequence_name", type=str, default="05", help="Name of the sequence")
-    parser.add_argument("--config", type=str, default="params.yaml", help="Path to the config file")
+    parser.add_argument("--config", type=str, default="config/params.yaml", help="Path to the config file")
     args = parser.parse_args()
 
     dataset_dir = args.dataset_dir
