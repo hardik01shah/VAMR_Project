@@ -44,7 +44,6 @@ class VO_Pipeline:
 
         self.state = None
 
-
     def vo_initilization(self, frame_id_1, frame_id_2,):
         # get the first two frames
         image_1 = self.dataloader.getFrame(frame_id_1)
@@ -98,6 +97,69 @@ class VO_Pipeline:
 
         print(f"Initialized VO pipeline.")
         print(self.state)
+
+    def bootstrap(self, frame_id_1, frame_id_2,):
+        # get the first two frames
+        image_1 = self.dataloader.getFrame(frame_id_1)
+        image_2 = self.dataloader.getFrame(frame_id_2)
+
+        # extract features
+        kp1, des1 = self.init_extractor.extract(image_1, descibe=True)
+        kp2, des2 = self.init_extractor.extract(image_2, descibe=True)
+        matches = self.init_extractor.match(des1, des2)
+
+        # get unmatched points in the second frame for candidate points
+        mask_m = np.zeros(len(kp2), dtype=bool)
+        mask_m[[m.trainIdx for m in matches]] = True
+        kp2_um = kp2[~mask_m]
+
+        # get the matched points (N, 2)
+        kp1 = np.array([kp1[m.queryIdx] for m in matches])
+        kp2 = np.array([kp2[m.trainIdx] for m in matches])
+
+        # estimate camera pose
+        M1 = self.state.pose_history[-1]
+        M2, inlier_mask = self.pose_estimator.estimatePose(kp1, kp2)
+        kp1 = kp1[inlier_mask.ravel()==1]
+        kp2 = kp2[inlier_mask.ravel()==1]
+
+        # triangulate the points (N, 3), (N, 2), (N, 2)
+        points3d, kp1, kp2 = self.pose_estimator.triangulatePoints(kp1, kp2, M1, M2)
+
+        # # Visualize the 3D points and tracks
+        # self.visualizer.viewTracksCandidates(image_1, image_2, kp1, kp2, kp2_um)
+        # cam_poses = [M1, M2]
+        # self.visualizer.view3DPoints(points3d, cam_poses)
+
+        # Update the state
+        self.state.pose_history.append(M2)
+        self.state.landmarks = np.append(self.state.landmarks, points3d, axis=0)
+        self.state.triangulated_kp = np.append(self.state.triangulated_kp, kp2, axis=0)
+        self.state.candidate_kp = np.append(self.state.candidate_kp, kp2_um, axis=0)
+        self.state.candidate_kp_first = np.append(self.state.candidate_kp_first, deepcopy(kp2_um), axis=0)
+        self.state.kp_track_length = np.append(self.state.kp_track_length, np.ones(len(kp2_um)))
+        # self.state.candidate_kp = kp2_um
+        # self.state.candidate_kp_first = deepcopy(kp2_um)
+        # self.state.kp_first_pose = []
+        new_first_pose = []
+        for i in range(len(kp2_um)):
+            new_first_pose.append(M2)
+        new_first_pose = np.array(new_first_pose)
+        self.state.kp_first_pose = np.append(self.state.kp_first_pose, new_first_pose, axis=0)
+        # new_track_length = np.ones(len(kp2_um))
+        # self.state.kp_track_length = np.append(self.state.kp_track_length, new_track_length)
+
+        self.state.image = image_2
+
+        # self.state.landmark_history.append(len(points3d))
+        # self.state.landmarks_um = np.zeros((0, 3))
+        # update the landmark history
+        self.state.landmark_history.append(len(self.state.landmarks))
+        # self.state.landmarks_um = np.zeros((0, 3))
+
+        print(f"Bootstrapped VO pipeline.")
+        # self.visualizer.viewVOPipeline(self.state)
+        # print(self.state)
         
 
     def processFrame(self, image):
@@ -188,15 +250,20 @@ class VO_Pipeline:
         total_frames = self.dataloader.length
         init_frame_1 = self.params["init_frame_1"]
         init_frame_2 = self.params["init_frame_2"] # 3 for parking, 2 for malaga and kitti
+        diff_frames = init_frame_2 - init_frame_1
 
         # Initialize the pipeline
         self.vo_initilization(init_frame_1, init_frame_2)
 
         # Process the remaining frames
         for frame_id in tqdm(range(init_frame_2+1, total_frames)):
-        # for frame_id in range(init_frame_2+1, total_frames):
             image = self.dataloader.getFrame(frame_id)
-            self.processFrame(image)
+            if frame_id % 50 == 0:
+                frame_id_1 = frame_id - diff_frames
+                frame_id_2 = frame_id
+                self.bootstrap(frame_id_1, frame_id_2)
+            else:
+                self.processFrame(image)
 
 
 if __name__ == "__main__":

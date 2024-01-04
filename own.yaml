@@ -1,0 +1,52 @@
+min_track_length: 3
+angle_threshold: 0.5
+mask_radius: 5
+
+init_frame_1: 40
+init_frame_2: 45 # 3 for parking, 2 for malaga and kitti
+
+dataset_name: "kitti" # "malaga" or "kitti" or "parking"
+sequence_name: "05"
+
+# For PnP Ransac
+pose_estimator:
+  reprojection_error: 2.0
+  iterations_count: 1000000
+  confidence: 0.9999
+  dist_coeffs: None
+
+feature_extractor:
+  init_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris", "shi-tomasi"]
+  cont_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris" "shi-tomasi"]
+  harris:
+    winSize: 5
+    zeroZone: -1 # -1 if we don't want to reject anything
+    criteria:
+      type: cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER
+      maxCount: 100 # max number of iterations
+      epsilon: 0.01 # desired accuracy
+    blockSize: 2 # Neighborhood size
+    ksize: 3 # Aperture parameter for the Sobel operator
+    k: 0.04 # Harris detector free parameter in the equation
+    thresh: 0.1 # Threshold for the Harris detector response
+
+  shi-tomasi:
+    maxCorners: 1000
+    qualityLevel: 0.03
+    minDistance: 7
+    blockSize: 31
+
+  sift:
+    nfeatures: 2000 
+    k: 2 # Number of best matches to retain
+    dist_threshold: 0.8 # Threshold for the distance between matched descriptors.
+
+  klt:
+    winSize: 31
+    maxLevel: 3
+    criteria:
+      type: cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT
+      maxCount: 30
+      epsilon: 0.03
+    dist_threshold: 30 # Threshold for the distance between tracked features.
+    max_bidirec_error: 30 # Maximum backward error to check in the tracking stage. 
