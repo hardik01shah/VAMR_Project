@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from frame_state import FrameState, KeyPoint
 
 class Visualizer:
-    def __init__(self):
+    def __init__(self, dataset_name):
         self.indx = 0
+        self.data_name = dataset_name
 
     def viewImage(self, image):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -242,6 +243,6 @@ class Visualizer:
 
         cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
-        plt.savefig("parking/vo_pipeline_state_{}.png".format(self.indx))
+        plt.savefig("{}/vo_pipeline_state_{}.png".format(self.data_name, self.indx))
         self.indx += 1
         plt.close(fig)

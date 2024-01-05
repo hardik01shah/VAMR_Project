@@ -36,7 +36,7 @@ class VO_Pipeline:
         cont_extractor_type = feature_extractor_params["cont_extractor_type"]
         self.init_extractor = FeatureExtractor(extractor_type=init_extractor_type, params=feature_extractor_params)
         self.continuous_extractor = FeatureExtractor(extractor_type=cont_extractor_type, params=feature_extractor_params)
-        self.visualizer = Visualizer()
+        self.visualizer = Visualizer(self.dataset_name)
 
         # get camera matrix
         self.K = self.dataloader.getCamera()
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_dir", type=str, default=os.path.join(cur_dir, "data"), help="Path to the dataset directory")
     parser.add_argument("--dataset_name", type=str, default="kitti", help="Name of the dataset")
     parser.add_argument("--sequence_name", type=str, default="05", help="Name of the sequence")
-    parser.add_argument("--config", type=str, default="params.yaml", help="Path to the config file")
+    parser.add_argument("--config", type=str, default="config/kitti.yaml", help="Path to the config file")
     args = parser.parse_args()
 
     dataset_dir = args.dataset_dir
