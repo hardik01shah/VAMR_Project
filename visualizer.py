@@ -2,6 +2,7 @@ import numpy as np
 from copy import deepcopy
 import cv2
 import matplotlib.pyplot as plt
+import matplotlib
 from frame_state import FrameState, KeyPoint
 
 class Visualizer:
@@ -143,6 +144,7 @@ class Visualizer:
         #   3. Number of landmarks in each frame
         #   4. Local trajectory
 
+        matplotlib.use("Agg")
         fig = plt.figure(figsize=(12,6))
         fig.suptitle("VO Pipeline State", fontsize=16)
 
@@ -242,6 +244,6 @@ class Visualizer:
 
         cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
-        plt.savefig("parking/vo_pipeline_state_{}.png".format(self.indx))
+        plt.savefig("./plots/vo_pipeline_state_{}.png".format(self.indx))
         self.indx += 1
         plt.close(fig)
