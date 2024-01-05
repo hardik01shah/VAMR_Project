@@ -181,7 +181,7 @@ class VO_Pipeline:
         self.state.landmarks_um = np.append(self.state.landmarks_um, landmarks_um, axis=0)
 
         # Visualize the state
-        self.visualizer.viewVOPipeline(self.state)
+        self.visualizer.viewVOPipeline(self.state, self.dataset_name)
 
 
     def run(self):

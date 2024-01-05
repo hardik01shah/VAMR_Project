@@ -3,10 +3,14 @@ from copy import deepcopy
 import cv2
 import matplotlib.pyplot as plt
 from frame_state import FrameState, KeyPoint
+import os
+import sys
+import matplotlib 
 
 class Visualizer:
     def __init__(self):
         self.indx = 0
+        matplotlib.use("Agg")
 
     def viewImage(self, image):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -130,7 +134,7 @@ class Visualizer:
         
         return postions
     
-    def viewVOPipeline(self, state: FrameState):
+    def viewVOPipeline(self, state: FrameState, dataset_name: str):
         """Visualize the VO pipeline state
         Args:
             state (FrameState): state of the VO pipeline
@@ -242,6 +246,9 @@ class Visualizer:
 
         cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
-        plt.savefig("parking/vo_pipeline_state_{}.png".format(self.indx))
+        # create folder if does not exist
+        if not os.path.exists(f"out/{dataset_name}"):
+            os.makedirs(f"out/{dataset_name}")
+        plt.savefig(f"out/{dataset_name}/vo_pipeline_state_{self.indx}.png")
         self.indx += 1
         plt.close(fig)
