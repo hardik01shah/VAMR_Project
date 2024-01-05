@@ -16,9 +16,7 @@ CPU:
 Note: make sure you have miniconda3 installed and working in the terminal  
 Note: first navigate into the folder  
 ```
-conda config --append channels conda-forge
-conda env create -f config/vamr.yaml
-pip3 install -r requirements.txt
+conda env create -f python_env/conda_mac.yaml
 ```
 
 # Download the datasets
@@ -35,7 +33,7 @@ unzip malaga.zip
 # Run the app
 You can configure the dataset name inside the main.py  
 ```
-python3 main.py 
+python3 vo_pipeline.py 
 ```
 
 # Demos
