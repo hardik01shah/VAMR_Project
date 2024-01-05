@@ -28,12 +28,16 @@ wget -O kitti05.zip https://rpg.ifi.uzh.ch/docs/teaching/2023/kitti05.zip
 unzip kitti05.zip
 wget -O malaga.zip https://rpg.ifi.uzh.ch/docs/teaching/2023/malaga-urban-dataset-extract-07.zip
 unzip malaga.zip
+mv malaga-urban-dataset-extract-07 malaga
 ```
 
 # Run the app
 You can configure the dataset name inside the main.py  
 ```
-python3 vo_pipeline.py 
+python3 vo_pipeline.py --dataset_name kitti --config config/kitti.yaml
+python3 vo_pipeline.py --dataset_name parking --config config/parking.yaml
+python3 vo_pipeline.py --dataset_name malaga --config config/malaga.yaml
+python3 vo_pipeline.py --dataset_name own --config config/config.yaml
 ```
 
 # Demos
