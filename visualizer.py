@@ -10,7 +10,6 @@ import matplotlib
 class Visualizer:
     def __init__(self):
         self.indx = 0
-        matplotlib.use("Agg")
 
     def viewImage(self, image):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -147,6 +146,7 @@ class Visualizer:
         #   3. Number of landmarks in each frame
         #   4. Local trajectory
 
+        matplotlib.use("Agg")
         fig = plt.figure(figsize=(12,6))
         fig.suptitle("VO Pipeline State", fontsize=16)
 
