@@ -118,8 +118,14 @@ class VO_Pipeline:
         kp2 = np.array([kp2[m.trainIdx] for m in matches])
 
         # estimate camera pose
-        M1 = self.state.pose_history[-1]
+        M1 = self.state.pose_history[frame_id_1-frame_id_2-1]
         M2, inlier_mask = self.pose_estimator.estimatePose(kp1, kp2)
+        # M2 is the pose relative to M1, so we need to retrieve the absolute pose w.r.t. the first frame
+        # Get the 4x4 transformation matrix from M2 and M1
+        # M1_4x4 = np.vstack((M1, np.array([0, 0, 0, 1])))
+        # M2_4x4 = np.vstack((M2, np.array([0, 0, 0, 1])))
+        # M2 = np.matmul(M2_4x4, M1_4x4)[:-1, :]
+
         kp1 = kp1[inlier_mask.ravel()==1]
         kp2 = kp2[inlier_mask.ravel()==1]
 
@@ -161,7 +167,6 @@ class VO_Pipeline:
         # self.visualizer.viewVOPipeline(self.state)
         # print(self.state)
         
-
     def processFrame(self, image):
 
         # extend tracks for landmark keypoints from previous frame

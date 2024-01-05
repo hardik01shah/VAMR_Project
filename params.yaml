@@ -17,7 +17,7 @@ pose_estimator:
 
 feature_extractor:
   init_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris", "shi-tomasi"]
-  cont_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris" "shi-tomasi"]
+  cont_extractor_type: "shi-tomasi" # ["sift", "surf", "orb", "fast", "harris" "shi-tomasi"]
   harris:
     winSize: 5
     zeroZone: -1 # -1 if we don't want to reject anything
