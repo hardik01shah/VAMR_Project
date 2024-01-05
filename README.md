@@ -40,6 +40,8 @@ python3 vo_pipeline.py --dataset_name malaga --config config/malaga.yaml
 python3 vo_pipeline.py --dataset_name own --config config/config.yaml
 ```
 
+Note: the results are saved into a subfolder with the dataset name in the out/ folder 
+
 # Demos
 ## Demo 1
 
