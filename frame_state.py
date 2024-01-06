@@ -43,7 +43,8 @@ class Landmark:
         self.keypoints = [] # list of keypoints of type 'KeyPoint' that correspond to this landmark
         self.alive = 0 # number of frames the landmark has been tracked
     def add_points(self, point_2d, cam_index):
-        self.keypoints.append(KeyPoint(point_2d, cam_index)) 
+        point_2d = KeyPoint(point_2d, cam_index) 
+        self.keypoints.append(point_2d) 
 
 class KeyPoint:
     def __init__(self, coord, cam_index):

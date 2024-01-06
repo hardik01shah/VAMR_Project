@@ -91,7 +91,10 @@ class VO_Pipeline:
         self.state.triangulated_kp = kp2
 
         # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
-        landmarks_list = [Landmark(points3d[i]).add_points(kp2[i], len(self.state.pose_history)-2) for i in range(len(points3d))]
+        landmarks_list = [Landmark(points3d[i]) for i in range(len(points3d))]
+        for i in range(len(landmarks_list)):
+            landmarks_list[i].add_points(kp2[i], len(self.state.pose_history)-2)
+
         self.state.history["camera_poses"].append(M2)
         self.state.history["landmarks"].append(landmarks_list) # Appending the list with triangulated landmarks
 
@@ -131,8 +134,9 @@ class VO_Pipeline:
         # Separating the landmarks that are inlier and outliers
         # Outliers are saved in the state history at first and inliers are added to the state later 
         # along with newly triangulated landmarks
-        landmarks_ba = list(np.array(self.state.history["landmarks"][-1])[inlier_mask]) 
-        self.state.history["landmarks"][-1] = list(np.array(self.state.history["landmarks"][-1])[~inlier_mask]) 
+        landmarks_ba_inlier = np.asarray(self.state.history["landmarks"][-1])[inlier_mask] 
+        landmarks_ba_outlier = np.asarray(self.state.history["landmarks"][-1])[~inlier_mask]
+        self.state.history["landmarks"][-1] = list(landmarks_ba_outlier) 
 
         # estimate camera pose of the current frame
         M1 = self.state.pose_history[-1]    # (3, 4)
@@ -146,8 +150,8 @@ class VO_Pipeline:
 
         # FOR BUNDLE ADJUSTMENT
         # Separating the landmarks that are inlier and outliers again
-        self.state.history["landmarks"][-1] += list(landmarks_ba[~inlier_mask])
-        landmarks_ba = landmarks_ba[inlier_mask]
+        self.state.history["landmarks"][-1] += list(landmarks_ba_inlier[~inlier_mask])
+        landmarks_ba_inlier = landmarks_ba_inlier[inlier_mask]
         
         # add new pose to the pose history
         self.state.pose_history.append(M2)
@@ -186,15 +190,26 @@ class VO_Pipeline:
         self.state.image = image
 
         # Adding tracked inlier landmarks and newly triangulated landmarks to the state history (along with keypoints)
-        landmarks_list = [landmarks_ba[i].add_points(kp2[i], len(self.state.pose_history)) for i in range(len(landmarks_ba))]
-        landmarks_list += [Landmark(extended_tracks["landmarks"][i]).add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)-2) 
-                            for i in range(len(extended_tracks["landmarks"]))]
-        # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
-        self.state.history["pose_history"].append(self.state.pose_history[-1])
-        self.state.history["landmarks"].append(landmarks_list)
+        landmarks_list1 = []
+        landmarks_list2 = []
+        for i in range(len(landmarks_ba_inlier)):
+            landmarks_ba_inlier[i].add_points(kp2[i], len(self.state.pose_history)-2)
+            landmarks_list1.append(landmarks_ba_inlier[i])
+        for i in range(len(extended_tracks["landmarks"])):
+            landmarks_list2.append(Landmark(extended_tracks["landmarks"][i]))
+        for i in range(len(landmarks_list2)):
+            landmarks_list2[i].add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)-2)
 
+        # landmarks_list += [Landmark(extended_tracks["landmarks"][i]).add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)-2) 
+        #                     for i in range(len(extended_tracks["landmarks"]))]
+        # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
+        self.state.history["camera_poses"].append(self.state.pose_history[-1])
+        self.state.history["landmarks"].append(landmarks_list1+landmarks_list2)
+
+        
         # Adjust camera poses and landnarks using bundle adjustment
-        poses_refined, landmarks_refined = self.BA.adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
+        if len(self.state.history["camera_poses"]) % 10 == 0:
+            poses_refined, landmarks_refined = self.BA.bundle_adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)
@@ -242,7 +257,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_dir", type=str, default=os.path.join(cur_dir, "data"), help="Path to the dataset directory")
     parser.add_argument("--dataset_name", type=str, default="kitti", help="Name of the dataset")
     parser.add_argument("--sequence_name", type=str, default="05", help="Name of the sequence")
-    parser.add_argument("--config", type=str, default="params.yaml", help="Path to the config file")
+    parser.add_argument("--config", type=str, default="config/params.yaml", help="Path to the config file")
     args = parser.parse_args()
 
     dataset_dir = args.dataset_dir

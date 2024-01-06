@@ -24,9 +24,10 @@ class BundleAdjuster:
             point_ind (numpy.ndarray): 3D point indices, shape (n_observations,)
             points_2d (numpy.ndarray): 2D points, shape (n_observations, 2)
         """
+        
         n_cameras = len(pose_history)
         landmarks = [l for landmarks in list(landmarks_history) for l in landmarks]
-        n_points = len(landmarks_history)
+        n_points = len(landmarks)
 
         cam_poses = np.array(list(pose_history))
         camera_params = np.zeros((n_cameras, 9))
@@ -83,7 +84,7 @@ class BundleAdjuster:
 
     #     return points_proj # (2, N)
     
-    def rotate(points, rot_vecs):
+    def rotate(self, points, rot_vecs):
         """Rotate points by given rotation vectors.
         
         Rodrigues' rotation formula is used.
