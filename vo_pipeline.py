@@ -95,9 +95,6 @@ class VO_Pipeline:
         self.state.history["camera_poses"].append(M2)
         self.state.history["landmarks"].append(landmarks_list) # Appending the list with triangulated landmarks
 
-        # Adjust camera poses and landnarks using bundle adjustment
-        camera_poses, landmarks = self.BA.adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
-
         self.state.candidate_kp = kp2_um
         self.state.candidate_kp_first = deepcopy(kp2_um)
         self.state.kp_first_pose = []
@@ -195,6 +192,9 @@ class VO_Pipeline:
         # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
         self.state.history["pose_history"].append(self.state.pose_history[-1])
         self.state.history["landmarks"].append(landmarks_list)
+
+        # Adjust camera poses and landnarks using bundle adjustment
+        poses_refined, landmarks_refined = self.BA.adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)
