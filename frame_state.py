@@ -18,12 +18,8 @@ class FrameState:
         self.landmarks_um = []      # unmatched landmarks
 
         self.history = {}
-        self.history["pose_history"] = deque(maxlen=20)
+        self.history["camera_poses"] = deque(maxlen=20)
         self.history["landmarks"] = deque(maxlen=20)
-        self.history["triangulated_kp"] = deque(maxlen=20)
-        self.history["camera_indices"] = None
-        self.history["point_indices"] = None
-        # self.history["window_size"] = 0
     
     def __str__(self) -> str:
         string = f"FrameState:\n"
@@ -43,8 +39,9 @@ class FrameState:
         
 class Landmark:
     def __init__(self, point_3d):
-        self.landmark = point_3d
-        self.keypoints = []
+        self.point = point_3d
+        self.keypoints = [] # list of keypoints of type 'KeyPoint' that correspond to this landmark
+        self.alive = 0 # number of frames the landmark has been tracked
     def add_points(self, point_2d, cam_index):
         self.keypoints.append(KeyPoint(point_2d, cam_index)) 
 

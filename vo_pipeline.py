@@ -12,6 +12,7 @@ from frame_state import FrameState, KeyPoint, Landmark
 from feature_extractor import FeatureExtractor
 from visualizer import Visualizer
 from estimate_campose import CamPoseEstimator
+from bundle_adjust import BundleAdjuster
 
 class VO_Pipeline:
     def __init__(self, dataloader, config_file):
@@ -42,6 +43,9 @@ class VO_Pipeline:
         # get camera matrix
         self.K = self.dataloader.getCamera()
         self.pose_estimator = CamPoseEstimator(self.K, pose_estimator_params)
+
+        # Initialize Bundle Adjuster
+        self.BA = BundleAdjuster(self.K)
 
         self.state = None
 
@@ -87,11 +91,12 @@ class VO_Pipeline:
         self.state.triangulated_kp = kp2
 
         # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
-        landmarks_list = [Landmark(points3d[i]).add_points(kp2[i], len(self.state.pose_history)-1) for i in range(len(points3d))]
+        landmarks_list = [Landmark(points3d[i]).add_points(kp2[i], len(self.state.pose_history)-2) for i in range(len(points3d))]
+        self.state.history["camera_poses"].append(M2)
+        self.state.history["landmarks"].append(landmarks_list) # Appending the list with triangulated landmarks
 
-        self.state.history["pose_history"].append(M1)
-        self.state.history["pose_history"].append(M2)
-        self.state.history["landmarks"].append(landmarks_list)
+        # Adjust camera poses and landnarks using bundle adjustment
+        camera_poses, landmarks = self.BA.adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
 
         self.state.candidate_kp = kp2_um
         self.state.candidate_kp_first = deepcopy(kp2_um)
@@ -121,11 +126,16 @@ class VO_Pipeline:
         
         # remove unmatched landmarks, keypoints
         landmarks = self.state.landmarks[inlier_mask]
-        landmarks_ba = list(np.array(self.state.history["landmarks"][-1])[inlier_mask]) # Landmarks for bundle adjustment
         landmarks_um = self.state.landmarks[~inlier_mask]
         kp1 = kp1[inlier_mask]
         kp2 = kp2[inlier_mask]
-
+        
+        # FOR BUNDLE ADJUSTMENT
+        # Separating the landmarks that are inlier and outliers
+        # Outliers are saved in the state history at first and inliers are added to the state later 
+        # along with newly triangulated landmarks
+        landmarks_ba = list(np.array(self.state.history["landmarks"][-1])[inlier_mask]) 
+        self.state.history["landmarks"][-1] = list(np.array(self.state.history["landmarks"][-1])[~inlier_mask]) 
 
         # estimate camera pose of the current frame
         M1 = self.state.pose_history[-1]    # (3, 4)
@@ -136,8 +146,11 @@ class VO_Pipeline:
         kp1 = kp1[inlier_mask]
         kp2 = kp2[inlier_mask]
         landmarks = landmarks[inlier_mask]
-        landmarks_ba = list(np.array(landmarks_ba)[inlier_mask])
 
+        # FOR BUNDLE ADJUSTMENT
+        # Separating the landmarks that are inlier and outliers again
+        self.state.history["landmarks"][-1] += list(landmarks_ba[~inlier_mask])
+        landmarks_ba = landmarks_ba[inlier_mask]
         
         # add new pose to the pose history
         self.state.pose_history.append(M2)
@@ -175,11 +188,10 @@ class VO_Pipeline:
         self.state.kp_track_length = extended_tracks["kp_track_length"]
         self.state.image = image
 
-        landmarks_list = [landmarks[i].add_points(kp2[i], len(self.state.pose_history)) for i in range(len(landmarks))]
-        landmarks_list.append([
-            Landmark(extended_tracks["landmarks"][i]).add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)) 
-            for i in range(len(extended_tracks["landmarks"]))])
-        
+        # Adding tracked inlier landmarks and newly triangulated landmarks to the state history (along with keypoints)
+        landmarks_list = [landmarks_ba[i].add_points(kp2[i], len(self.state.pose_history)) for i in range(len(landmarks_ba))]
+        landmarks_list += [Landmark(extended_tracks["landmarks"][i]).add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)-2) 
+                            for i in range(len(extended_tracks["landmarks"]))]
         # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
         self.state.history["pose_history"].append(self.state.pose_history[-1])
         self.state.history["landmarks"].append(landmarks_list)
