@@ -3,11 +3,12 @@ import os
 import numpy as np
 from tqdm import tqdm
 from copy import deepcopy
+from collections import deque
 import yaml
 import argparse
 # from data_loader import DatasetLoader
 from data_loader import KittiLoader, MalagaLoader, ParkingLoader, OwnDataLoader
-from frame_state import FrameState, KeyPoint
+from frame_state import FrameState, KeyPoint, Landmark
 from feature_extractor import FeatureExtractor
 from visualizer import Visualizer
 from estimate_campose import CamPoseEstimator
@@ -64,7 +65,7 @@ class VO_Pipeline:
         kp1 = np.array([kp1[m.queryIdx] for m in matches])
         kp2 = np.array([kp2[m.trainIdx] for m in matches])
 
-        # estimate camera pose
+        # estimate camera pose and create a mask for the inliers got from RANSAC
         M1 = np.eye(3, 4)
         M2, inlier_mask = self.pose_estimator.estimatePose(kp1, kp2)
         kp1 = kp1[inlier_mask.ravel()==1]
@@ -84,6 +85,14 @@ class VO_Pipeline:
         self.state.pose_history.append(M2)
         self.state.landmarks = points3d
         self.state.triangulated_kp = kp2
+
+        # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
+        landmarks_list = [Landmark(points3d[i]).add_points(kp2[i], len(self.state.pose_history)-1) for i in range(len(points3d))]
+
+        self.state.history["pose_history"].append(M1)
+        self.state.history["pose_history"].append(M2)
+        self.state.history["landmarks"].append(landmarks_list)
+
         self.state.candidate_kp = kp2_um
         self.state.candidate_kp_first = deepcopy(kp2_um)
         self.state.kp_first_pose = []
@@ -103,6 +112,7 @@ class VO_Pipeline:
     def processFrame(self, image):
 
         # extend tracks for landmark keypoints from previous frame
+        # Gives a boolean inlier_mask
         kp1 = self.state.triangulated_kp   # (N, 2)
         kp2, inlier_mask = self.continuous_extractor.track(
             image1=self.state.image,
@@ -111,9 +121,11 @@ class VO_Pipeline:
         
         # remove unmatched landmarks, keypoints
         landmarks = self.state.landmarks[inlier_mask]
+        landmarks_ba = list(np.array(self.state.history["landmarks"][-1])[inlier_mask]) # Landmarks for bundle adjustment
         landmarks_um = self.state.landmarks[~inlier_mask]
         kp1 = kp1[inlier_mask]
         kp2 = kp2[inlier_mask]
+
 
         # estimate camera pose of the current frame
         M1 = self.state.pose_history[-1]    # (3, 4)
@@ -124,7 +136,9 @@ class VO_Pipeline:
         kp1 = kp1[inlier_mask]
         kp2 = kp2[inlier_mask]
         landmarks = landmarks[inlier_mask]
+        landmarks_ba = list(np.array(landmarks_ba)[inlier_mask])
 
+        
         # add new pose to the pose history
         self.state.pose_history.append(M2)
 
@@ -160,6 +174,15 @@ class VO_Pipeline:
         self.state.kp_first_pose = extended_tracks["kp_first_pose"]
         self.state.kp_track_length = extended_tracks["kp_track_length"]
         self.state.image = image
+
+        landmarks_list = [landmarks[i].add_points(kp2[i], len(self.state.pose_history)) for i in range(len(landmarks))]
+        landmarks_list.append([
+            Landmark(extended_tracks["landmarks"][i]).add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)) 
+            for i in range(len(extended_tracks["landmarks"]))])
+        
+        # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
+        self.state.history["pose_history"].append(self.state.pose_history[-1])
+        self.state.history["landmarks"].append(landmarks_list)
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)

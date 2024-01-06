@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from collections import deque
 
 class FrameState:
     def __init__(self):
@@ -15,6 +16,14 @@ class FrameState:
         # for the visualizer
         self.landmark_history = []  # list of number of landmarks in each frame
         self.landmarks_um = []      # unmatched landmarks
+
+        self.history = {}
+        self.history["pose_history"] = deque(maxlen=20)
+        self.history["landmarks"] = deque(maxlen=20)
+        self.history["triangulated_kp"] = deque(maxlen=20)
+        self.history["camera_indices"] = None
+        self.history["point_indices"] = None
+        # self.history["window_size"] = 0
     
     def __str__(self) -> str:
         string = f"FrameState:\n"
@@ -26,9 +35,20 @@ class FrameState:
         string += f"kp_track_length: {self.kp_track_length.shape}\n"
         return string
 
-class KeyPoint:
-    def __init__(self, coord, first_pose, track_history):
-        self.coord = coord                         # (u, v) coordinates of the keypoint (2,1)
-        self.first_pose = first_pose               # pose of the first frame where the keypoint was detected
-        self.track_history = np.array(coord)       # uv coordinates of tracked keypoints in previous frames (2, N)
+# class KeyPoint:
+#     def __init__(self, coord, first_pose, track_history):
+#         self.coord = coord                         # (u, v) coordinates of the keypoint (2,1)
+#         self.first_pose = first_pose               # pose of the first frame where the keypoint was detected
+#         self.track_history = np.array(coord)       # uv coordinates of tracked keypoints in previous frames (2, N)
         
+class Landmark:
+    def __init__(self, point_3d):
+        self.landmark = point_3d
+        self.keypoints = []
+    def add_points(self, point_2d, cam_index):
+        self.keypoints.append(KeyPoint(point_2d, cam_index)) 
+
+class KeyPoint:
+    def __init__(self, coord, cam_index):
+        self.coord = coord
+        self.cam_index = cam_index
