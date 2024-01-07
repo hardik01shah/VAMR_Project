@@ -1,0 +1,72 @@
+min_track_length: 3
+angle_threshold: 0.5
+mask_radius: 5
+
+init_frame_1: 0
+init_frame_2: 10 # 3 for parking, 2 for malaga and kitti
+
+dataset_name: "malaga" # "malaga" or "kitti" or "parking"
+sequence_name: "05"
+
+# For PnP Ransac
+pose_estimator:
+  reprojection_error: 2.0
+  iterations_count: 1000000
+  confidence: 0.9999
+  dist_coeffs: None
+
+feature_extractor:
+  init_extractor_type: "sift" # ["sift", "surf", "orb", "fast", "harris", "shi-tomasi"]
+  cont_extractor_type: "shi-tomasi" # ["sift", "surf", "orb", "fast", "harris" "shi-tomasi"]
+  harris:
+    winSize: 5
+    zeroZone: -1 # -1 if we don't want to reject anything
+    criteria:
+      type: cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER
+      maxCount: 100 # max number of iterations
+      epsilon: 0.01 # desired accuracy
+    blockSize: 2 # Neighborhood size
+    ksize: 3 # Aperture parameter for the Sobel operator
+    k: 0.04 # Harris detector free parameter in the equation
+    thresh: 0.1 # Threshold for the Harris detector response
+
+  shi-tomasi:
+    maxCorners: 1000
+    qualityLevel: 0.03
+    minDistance: 7
+    blockSize: 31
+
+  sift:
+    nfeatures: 1000 
+    k: 2 # Number of best matches to retain
+    dist_threshold: 0.8 # Threshold for the distance between matched descriptors.
+
+  klt:
+    winSize: 31
+    maxLevel: 3
+    criteria:
+      type: cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT
+      maxCount: 30
+      epsilon: 0.03
+    dist_threshold: 30 # Threshold for the distance between tracked features.
+    max_bidirec_error: 30 # Maximum backward error to check in the tracking stage. 
+
+bundle_adjustment:
+  use_ba: False
+  ba_call_rate: 30 # Number of frames between bundle adjustment calls
+  ba_frame_length: 5 # Number of frames in the past to use for bundle adjustment
+  ba_params:
+    verbose: 2 # 0 for no output, 1 for only final message, 2 for iteration info
+    ftol: 1e-2 # Precision goal for the value of f in the stopping criterion.
+    method: 'trf' 
+    # Method to use in the optimization. Should be one of
+      # 'trf' : Trust Region Reflective algorithm, particularly suitable for large sparse problems with bounds. Generally robust method.
+      # 'dogbox' : dogleg algorithm with rectangular trust regions, typical use case is small problems with bounds. Not recommended for problems with rank-deficient Jacobian.
+      # 'lm' : Levenberg-Marquardt algorithm as implemented in MINPACK. Doesn't handle bounds and sparse Jacobians. Usually the most efficient method for small unconstrained problems.
+    x_scale: 'jac'
+
+bootstrap:
+  use_bootstrap: False
+  bootstrap_index: 7 # Index of the frame to use as the first keyframe relative to the current frame
+  bootstrap_frequency: 20 # Number of frames between bootstrap calls
+  bootstrap_lm_threshold: 100 # Threshold for len of current landmarks to trigger bootstrap
