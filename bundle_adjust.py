@@ -11,7 +11,7 @@ class BundleAdjuster:
     def __init__(self, K, params):
         
         self.K = K
-        self.visualizer = Visualizer()
+        self.visualizer = Visualizer(True)
         self.x_scale = params["x_scale"]
         self.ftol = params["ftol"]
         self.method = params["method"]

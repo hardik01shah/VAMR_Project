@@ -8,8 +8,9 @@ import sys
 import matplotlib 
 
 class Visualizer:
-    def __init__(self):
+    def __init__(self, use_ba):
         self.indx = 0
+        self.use_ba = use_ba
 
     def viewImage(self, image):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -148,7 +149,10 @@ class Visualizer:
 
         matplotlib.use("Agg")
         fig = plt.figure(figsize=(12,6))
-        fig.suptitle("VO Pipeline State", fontsize=16)
+        if self.use_ba:
+            fig.suptitle("VO Pipeline State (with BA)", fontsize=16)
+        else:
+            fig.suptitle("VO Pipeline State", fontsize=16)
 
         # 1. Image overlayed with triangulated keypoints and candidate keypoints
         ax = fig.add_subplot(221)
@@ -244,7 +248,10 @@ class Visualizer:
         data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
         data = cv2.cvtColor(data, cv2.COLOR_RGB2BGR)
 
-        cv2.imshow("VO Pipeline State", data)
+        if self.use_ba:
+            cv2.imshow("VO Pipeline State (with BA)", data)
+        else:
+            cv2.imshow("VO Pipeline State", data)
         cv2.waitKey(1)
         # create folder if does not exist
         if not os.path.exists(f"out/{dataset_name}"):
