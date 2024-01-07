@@ -13,6 +13,7 @@ from feature_extractor import FeatureExtractor
 from visualizer import Visualizer
 from estimate_campose import CamPoseEstimator
 from bundle_adjust import BundleAdjuster
+import itertools
 
 class VO_Pipeline:
     def __init__(self, dataloader, config_file):
@@ -109,6 +110,7 @@ class VO_Pipeline:
 
         self.state.landmark_history.append(len(points3d))
         self.state.landmarks_um = np.zeros((0, 3))
+        self.state.last_ba_call = 0
 
         print(f"Initialized VO pipeline.")
         print(self.state)
@@ -206,10 +208,12 @@ class VO_Pipeline:
         self.state.history["camera_poses"].append(self.state.pose_history[-1])
         self.state.history["landmarks"].append(landmarks_list1+landmarks_list2)
 
-        
-        # Adjust camera poses and landnarks using bundle adjustment
-        if len(self.state.history["camera_poses"]) % 10 == 0:
-            poses_refined, landmarks_refined = self.BA.bundle_adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
+        # landmarks_list_check = [l for landmarks in list(self.state.history["landmarks"]) for l in landmarks]
+        # points_viz = np.zeros((len(landmarks_list_check), 3))
+        # for i, landmarks in enumerate(landmarks_list_check):
+        #     points_viz[i] = landmarks.point
+        # len_cam_poses = len(self.state.history["camera_poses"])
+        # self.visualizer.view3DPoints(points_viz, list(itertools.islice(self.state.history["camera_poses"], len_cam_poses-1)))
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)
@@ -229,6 +233,16 @@ class VO_Pipeline:
         # update the landmark history
         self.state.landmark_history.append(len(self.state.landmarks))
         self.state.landmarks_um = np.append(self.state.landmarks_um, landmarks_um, axis=0)
+
+        # Adjust camera poses and landmarks using bundle adjustment
+        if len(self.state.pose_history) % 20 == 0:
+            poses_refined, landmarks_refined = self.BA.bundle_adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
+            self.state.pose_history[-10:] = poses_refined
+            self.state.landmarks_um = np.append(self.state.landmarks_um[:self.state.last_ba_call], landmarks_refined, axis=0)
+            self.state.last_ba_call = len(self.state.landmarks_um)
+        #     print(landmarks_refined.shape)
+        #     self.visualizer.view3DPoints(landmarks_refined, poses_refined)
+        
 
         # Visualize the state
         self.visualizer.viewVOPipeline(self.state)

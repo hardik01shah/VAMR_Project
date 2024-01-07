@@ -4,10 +4,12 @@ from scipy.optimize import least_squares
 from scipy.sparse import lil_matrix
 import matplotlib.pyplot as plt
 import cv2
+from visualizer import Visualizer
 
 class BundleAdjuster:
     def __init__(self, K):
         self.K = K
+        self.visualizer = Visualizer()
 
     def convert_to_bundle_adjust_format(self, pose_history, landmarks_history):
         """
@@ -26,8 +28,8 @@ class BundleAdjuster:
         """
         
         n_cameras = len(pose_history)
-        landmarks = [l for landmarks in list(landmarks_history) for l in landmarks]
-        n_points = len(landmarks)
+        landmarks_list = [l for landmarks in list(landmarks_history) for l in landmarks]
+        n_points = len(landmarks_list)
 
         cam_poses = np.array(list(pose_history))
         camera_params = np.zeros((n_cameras, 9))
@@ -36,7 +38,12 @@ class BundleAdjuster:
         point_ind = []
         points_2d = []
 
-        for i, (pose, landmarks) in enumerate(zip(pose_history, landmarks_history)):
+        print("n_cameras: ", n_cameras)
+        print("n_points: ", n_points)
+        print("len(landmarks): ", len(landmarks_list))
+        print("Cam pose shape", cam_poses.shape)
+
+        for i, pose in enumerate(cam_poses):
             # Extract rotation and translation from pose
             rvec, _ = cv2.Rodrigues(pose[:, :3])
             tvec = pose[:, 3]
@@ -47,42 +54,51 @@ class BundleAdjuster:
             camera_params[i, 6] = self.K[0, 0]  # focal distance
             camera_params[i, 7:] = [0, 0]  # distortion parameters
 
-            # Set point coordinates
-            for i, landmark in enumerate(landmarks):
-                points_3d[i] = landmark.point
+        for i, landmark in enumerate(landmarks_list):
+            points_3d[i] = landmark.point
+            # Set observation indices and 2D coordinates
+            for keypoint in landmark.keypoints:
+                camera_ind.append(keypoint.cam_index)
+                point_ind.append(i)
+                points_2d.append(keypoint.coord)
 
-                # Set observation indices and 2D coordinates
-                for keypoint in landmark.keypoints:
-                    camera_ind.append(keypoint.cam_index)
-                    point_ind.append(i)
-                    points_2d.append(keypoint.coord)
+        if np.max(camera_ind) > n_cameras - 1:
+            mask = camera_ind > np.max(camera_ind) - n_cameras
+            camera_ind = np.array(camera_ind)[mask]
+            camera_ind = camera_ind - np.min(camera_ind)
+            point_ind = np.array(point_ind)[mask]
+            points_2d = np.array(points_2d)[mask]
+        else:
+            camera_ind = np.array(camera_ind)
+            point_ind = np.array(point_ind)
+            points_2d = np.array(points_2d)
 
-        camera_ind = np.array(camera_ind)
-        point_ind = np.array(point_ind)
-        points_2d = np.array(points_2d)
+        # self.visualizer.view3DPoints(points_3d, cam_poses)
 
         return camera_params, cam_poses, points_3d, camera_ind, point_ind, points_2d
         
-    # def project(self, points_3d, camera_pose):
-    #     """
-    #     Project 3D points to 2D using camera parameters
+    def project(self, points_3d, camera_pose):
+        """
+        Project 3D points to 2D using camera parameters
         
-    #     Args:
-    #         points_3d (numpy.ndarray): 3D points to be projected, shape (3, N)
-    #         K (numpy.ndarray): Camera intrinsic matrix, shape (3, 3)
-    #         camera_pose (numpy.ndarray): Camera pose matrix, shape (3, 4)
+        Args:
+            points_3d (numpy.ndarray): 3D points to be projected, shape (N, 3)
+            K (numpy.ndarray): Camera intrinsic matrix, shape (3, 3)
+            camera_pose (numpy.ndarray): Camera pose matrix, shape (3, 4)
         
-    #     Returns:
-    #         numpy.ndarray: Projected 2D points, shape (2, N)
-    #     """
-    #     # ... implementation of the projection function ...
-    #     T = np.vstack((camera_pose, np.array([0, 0, 0, 1])))
-    #     points_cam = T @ np.vstack((points_3d, np.ones((1, points_3d.shape[1])))) # (4, N)
-    #     points_3d_cam = points_cam[:3, :] / points_cam[3, :] # (3, N)
-    #     points_proj = self.K @ points_3d_cam # (3, N)
-    #     points_proj = points_proj[:2, :] / points_proj[2, :] # (2, N)
+        Returns:
+            numpy.ndarray: Projected 2D points, shape (2, N)
+        """
+        # ... implementation of the projection function ...
+        points_proj = np.zeros((points_3d.shape[0], 2))
+        for i in range(len(camera_pose)):
+            T = np.vstack((camera_pose[i], np.array([0, 0, 0, 1])))
+            points_cam = T @ np.append(points_3d[i], 1) # (4,)
+            points_3d_cam = points_cam[:3] / points_cam[3] # (3,)
+            temp = self.K @ points_3d_cam # (3,)
+            points_proj[i] = temp[:2] / temp[2] # (2, 1)
 
-    #     return points_proj # (2, N)
+        return points_proj # (2, N)
     
     def rotate(self, points, rot_vecs):
         """Rotate points by given rotation vectors.
@@ -99,20 +115,20 @@ class BundleAdjuster:
 
         return cos_theta * points + sin_theta * np.cross(v, points) + dot * (1 - cos_theta) * v
 
-    def project(self, points, camera_params):
+    # def project(self, points, camera_params):
 
-        """Convert 3-D points to 2-D by projecting onto images."""
+    #     """Convert 3-D points to 2-D by projecting onto images."""
 
-        points_proj = self.rotate(points, camera_params[:, :3])
-        points_proj += camera_params[:, 3:6]
-        points_proj = -points_proj[:, :2] / points_proj[:, 2, np.newaxis]
-        f = camera_params[:, 6]
-        k1 = camera_params[:, 7]
-        k2 = camera_params[:, 8]
-        n = np.sum(points_proj**2, axis=1)
-        r = 1 + k1 * n + k2 * n**2
-        points_proj *= (r * f)[:, np.newaxis]
-        return points_proj
+    #     points_proj = self.rotate(points, camera_params[:, :3])
+    #     points_proj += camera_params[:, 3:6]
+    #     points_proj = -points_proj[:, :2] / points_proj[:, 2, np.newaxis]
+    #     f = camera_params[:, 6]
+    #     k1 = camera_params[:, 7]
+    #     k2 = camera_params[:, 8]
+    #     n = np.sum(points_proj**2, axis=1)
+    #     r = 1 
+    #     points_proj *= (r * f)[:, np.newaxis]
+    #     return points_proj
     
     def get_hom_trans(self, camera_params):
         """
@@ -144,8 +160,10 @@ class BundleAdjuster:
         `params` contains camera parameters and 3-D coordinates.
         """
         camera_params = params[:n_cameras * 9].reshape((n_cameras, 9))
+        camera_poses = self.get_hom_trans(camera_params)
         points_3d = params[n_cameras * 9:].reshape((n_points, 3))
-        points_proj = self.project(points_3d[point_indices], camera_params[camera_indices])
+        print(points_3d.shape)
+        points_proj = self.project(points_3d[point_indices], camera_poses[camera_indices])
 
         return (points_proj - points_2d).ravel()
     
@@ -172,18 +190,28 @@ class BundleAdjuster:
 
         # Convert the data to the format required by the bundle adjustment function
         camera_params, _, points_3d, camera_ind, point_ind, points_2d = self.convert_to_bundle_adjust_format(pose_history, landmarks_history)
+
         n_cameras = len(pose_history)
         n_points = points_3d.shape[0]
 
         x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
+        f0 = self.fun(x0, n_cameras, n_points, camera_ind, point_ind, points_2d)
+
+        plt.plot(f0)
+        plt.show()
 
         A = self.bundle_adjustment_sparsity(n_cameras, n_points, camera_ind, point_ind)
 
-        res = least_squares(self.fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-4, method='trf',
+        res = least_squares(self.fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-2, method='trf',
                             args=(n_cameras, n_points, camera_ind, point_ind, points_2d))
+        
+        plt.plot(res.fun)
+        plt.show()
 
         camera_params = res.x[:n_cameras * 9].reshape((n_cameras, 9))
         camera_poses = self.get_hom_trans(camera_params)
         points_3d = res.x[n_cameras * 9:].reshape((n_points, 3))
+
+        self.visualizer.view3DPoints(points_3d, camera_poses)
 
         return camera_poses, points_3d
