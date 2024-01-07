@@ -1,6 +1,7 @@
 import cv2
 import os
 import numpy as np
+from scipy.spatial.distance import pdist
 from tqdm import tqdm
 from copy import deepcopy
 from collections import deque
@@ -49,6 +50,15 @@ class VO_Pipeline:
         self.use_ba = self.params["bundle_adjustment"]["use_ba"]
         self.ba_call_rate = self.params["bundle_adjustment"]["ba_call_rate"]
         self.BA = BundleAdjuster(self.K, self.params["bundle_adjustment"]["ba_params"])
+
+        # Initialize bootstrap
+        self.use_bootstrap = self.params["bootstrap"]["use_bootstrap"]
+        self.bootstrap_index = self.params["bootstrap"]["bootstrap_index"]
+        self.bootstrap_frequency = self.params["bootstrap"]["bootstrap_frequency"]
+        self.bootstrap_lm_threshold = self.params["bootstrap"]["bootstrap_lm_threshold"]
+
+        if self.use_ba and self.use_bootstrap:
+            raise ValueError("Bundle adjustment and bootstrapping cannot be used together.")
 
         self.state = None
 
@@ -104,6 +114,16 @@ class VO_Pipeline:
 
             self.state.history["camera_poses"].append(M2)
             self.state.history["landmarks"].append(landmarks_list) # Appending the list with triangulated landmarks
+
+        # ---------------------------------------------------------------
+        # FOR BOOTSTRAPPING
+        # ---------------------------------------------------------------
+        # add landmarks to the history
+        if self.use_bootstrap:
+            cur_landmarks = [Landmark(points3d[i]) for i in range(len(points3d))]
+            for i in range(len(kp2)):
+                cur_landmarks[i].add_points(kp2[i], 1)
+            self.state.history["landmarks"].append(cur_landmarks)
 
         self.state.candidate_kp = kp2_um
         self.state.candidate_kp_first = deepcopy(kp2_um)
@@ -223,6 +243,16 @@ class VO_Pipeline:
             self.state.history["camera_poses"].append(self.state.pose_history[-1])
             self.state.history["landmarks"].append(landmarks_list1+landmarks_list2)
         # ---------------------------------------------------------------
+        
+        # ---------------------------------------------------------------
+        # FOR BOOTSTRAPPING
+        # ---------------------------------------------------------------
+        if self.use_bootstrap:
+            # add landmarks to the history
+            cur_landmarks = [Landmark(self.state.landmarks[i]) for i in range(len(self.state.landmarks))]
+            for i in range(len(self.state.triangulated_kp)):
+                cur_landmarks[i].add_points(self.state.triangulated_kp[i], len(self.state.pose_history)-1)
+            self.state.history["landmarks"].append(cur_landmarks)
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)
@@ -257,6 +287,190 @@ class VO_Pipeline:
 
         # Visualize the state
         self.visualizer.viewVOPipeline(self.state, self.dataset_name)
+    
+    def bootstrap(self, prev_indx, prev_img, cur_img):
+        prev_landmarks = self.state.history["landmarks"][prev_indx]
+        cur_landmarks = self.state.history["landmarks"][-1]
+
+        # get the landmarks that are common in both frames
+        common_landmarks = np.zeros((0, 3))
+        prev_uv = np.zeros((0, 2))
+        cur_uv = np.zeros((0, 2))
+        
+        for i in range(len(cur_landmarks)):
+            for j in range(len(prev_landmarks)):
+                if np.array_equal(cur_landmarks[i].point, prev_landmarks[j].point):
+                    common_landmarks = np.append(common_landmarks, cur_landmarks[i].point.reshape(1,3), axis=0)
+                    prev_uv = np.append(prev_uv, prev_landmarks[j].keypoints[-1].coord.reshape(1,2), axis=0)
+                    cur_uv = np.append(cur_uv, cur_landmarks[i].keypoints[-1].coord.reshape(1,2), axis=0)
+                    
+        # estimate camera pose by bootstrapping
+        M1 = self.state.pose_history[prev_indx]
+        M2, inlier_mask = self.pose_estimator.estimatePose(prev_uv, cur_uv)
+
+        # remove unmatched landmarks, keypoints
+        common_landmarks = common_landmarks[inlier_mask.ravel()==1]
+        prev_uv = prev_uv[inlier_mask.ravel()==1]
+        cur_uv = cur_uv[inlier_mask.ravel()==1]
+
+        # triangulate the points (N, 3), (N, 2), (N, 2)
+        points3d, mask = self.pose_estimator.triangulatePointsMasked(prev_uv, cur_uv, np.eye(3,4), M2)
+
+        # Visualize the 3D points and tracks
+        # self.visualizer.viewTracksCandidates(prev_img, cur_img, prev_uv, cur_uv, np.zeros((0,2)))
+        # cam_poses = [np.eye(3,4), M2]
+        # self.visualizer.view3DPoints(points3d, cam_poses)
+
+        # ensure that the triangulated points are in front of the camera
+        common_landmarks = common_landmarks[mask]
+        points3d = points3d[mask]
+        prev_uv = prev_uv[mask]
+        cur_uv = cur_uv[mask]
+
+        assert len(common_landmarks) == len(points3d) == len(prev_uv) == len(cur_uv)
+
+        # calculate relative scale factor
+        # calulate distance between pairs of points from 1) Current VO pipeline 2) Bootstrapped VO pipeline
+        dist_vo = pdist(common_landmarks)
+        dist_bootstrap = pdist(points3d)
+
+        # remove zero distances
+        mask_vo = dist_vo != 0
+        mask_bootstrap = dist_bootstrap != 0
+        mask = mask_vo & mask_bootstrap
+        dist_vo = dist_vo[mask]
+        dist_bootstrap = dist_bootstrap[mask]
+
+        # calculate the ratio of the distances
+        ratio = np.mean(dist_vo/dist_bootstrap)
+        # ratio = np.median(dist_vo/dist_bootstrap)
+        
+        old_M2 = self.state.pose_history[-1]
+        vo_t = np.linalg.norm(old_M2[:,3] - M1[:,3])
+        bootstrap_t = np.linalg.norm(M2[:,3])    # should be close to 2
+
+        assert np.allclose(bootstrap_t, 1)
+
+        print(f"VO Distance: {vo_t}")
+        print(f"Bootstrap Distance: {bootstrap_t}")
+        print(f"Ratio: {ratio}")
+        print(f"New Distance: {ratio * np.linalg.norm(M2[:,3])}")
+
+        # estimate new pose by scaling the bootstrapped pose
+        M2 = np.hstack((M2[:, :3], M2[:, 3].reshape(3,1)*ratio))
+
+        # M2 is the relative pose of the current frame wrt the previous frame, so we need to get the absolute pose
+        # make M1 and M2 homogeneous
+        M1_4x4 = np.vstack((M1, np.array([0, 0, 0, 1])))    # T_Cam1_World
+        M2_4x4 = np.vstack((M2, np.array([0, 0, 0, 1])))    # T_Cam2_Cam1
+        M2 = (M2_4x4 @ M1_4x4)                              # T_Cam2_World
+        M2 = M2[:3, :]/M2[3, 3]                             
+
+        # update pose in the pose history
+        self.state.pose_history[-1] = M2
+
+        # get new landmarks and reset the candidate keypoints
+
+        # extract features
+        kp1, des1 = self.init_extractor.extract(prev_img, descibe=True)
+        kp2, des2 = self.init_extractor.extract(cur_img, descibe=True)
+        matches = self.init_extractor.match(des1, des2)
+
+        # get unmatched points in the second frame for candidate points
+        mask_m = np.zeros(len(kp2), dtype=bool)
+        mask_m[[m.trainIdx for m in matches]] = True
+        kp2_um = kp2[~mask_m]
+
+        # get the matched points (N, 2)
+        kp1 = np.array([kp1[m.queryIdx] for m in matches])
+        kp2 = np.array([kp2[m.trainIdx] for m in matches])
+
+        _, inlier_mask = self.pose_estimator.estimatePose(kp1, kp2)
+        kp1 = kp1[inlier_mask.ravel()==1]
+        kp2 = kp2[inlier_mask.ravel()==1]
+
+        # triangulate the points (N, 3), (N, 2), (N, 2)
+        points3d, kp1, kp2 = self.pose_estimator.triangulatePoints(kp1, kp2, M1, M2)
+
+        # Visualize the 3D points and tracks
+        # self.visualizer.viewTracksCandidates(prev_img, cur_img, kp1, kp2, kp2_um)
+        # cam_poses = [M1, old_M2]
+        # self.visualizer.view3DPoints(points3d, cam_poses)
+
+        # update the state
+        self.state.landmarks = points3d
+        self.state.triangulated_kp = kp2
+        self.state.candidate_kp = kp2_um
+        self.state.candidate_kp_first = deepcopy(kp2_um)
+        self.state.kp_first_pose = []
+        for i in range(len(kp2_um)):
+            self.state.kp_first_pose.append(M2)
+        self.state.kp_first_pose = np.array(self.state.kp_first_pose)
+        self.state.kp_track_length = np.ones(len(kp2_um))
+        self.state.image = cur_img
+
+        # add landmarks to the history
+        cur_landmarks = [Landmark(points3d[i]) for i in range(len(points3d))]
+        for i in range(len(kp2)):
+            cur_landmarks[i].add_points(kp2[i], 1)
+        self.state.history["landmarks"][-1] = cur_landmarks
+    
+    def bootstrap_landmarks(self, prev_indx, prev_img, cur_img):
+        # get new landmarks and reset the candidate keypoints
+        # extract features
+        kp1, des1 = self.init_extractor.extract(prev_img, descibe=True)
+        kp2, des2 = self.init_extractor.extract(cur_img, descibe=True)
+        matches = self.init_extractor.match(des1, des2)
+
+        # get unmatched points in the second frame for candidate points
+        mask_m = np.zeros(len(kp2), dtype=bool)
+        mask_m[[m.trainIdx for m in matches]] = True
+        kp2_um = kp2[~mask_m]
+
+        # get the matched points (N, 2)
+        kp1 = np.array([kp1[m.queryIdx] for m in matches])
+        kp2 = np.array([kp2[m.trainIdx] for m in matches])
+
+        new_m2, inlier_mask = self.pose_estimator.estimatePose(kp1, kp2)
+        kp1 = kp1[inlier_mask.ravel()==1]
+        kp2 = kp2[inlier_mask.ravel()==1]
+
+        # triangulate the points (N, 3), (N, 2), (N, 2)
+        points3d, kp1, kp2 = self.pose_estimator.triangulatePoints(kp1, kp2, np.eye(3,4), new_m2)
+
+        M1 = self.state.pose_history[prev_indx]
+        old_M2 = self.state.pose_history[-1]
+        M1_4x4 = np.vstack((M1, np.array([0, 0, 0, 1])))        # T_Cam1_World
+        M2_4x4 = np.vstack((old_M2, np.array([0, 0, 0, 1])))    # T_Cam2_Cam1
+
+        # convert points3d to world frame
+        points3d = np.vstack((points3d.T, np.ones((1, len(points3d)))))
+        points3d = np.linalg.inv(M1_4x4) @ points3d
+        points3d = points3d[:3, :]/points3d[3, :]
+        points3d = points3d.T
+
+        # Visualize the 3D points and tracks
+        # self.visualizer.viewTracksCandidates(prev_img, cur_img, kp1, kp2, kp2_um)
+        # cam_poses = [M1, old_M2]
+        # self.visualizer.view3DPoints(points3d, cam_poses)
+
+        # update the state
+        self.state.landmarks = points3d
+        self.state.triangulated_kp = kp2
+        self.state.candidate_kp = kp2_um
+        self.state.candidate_kp_first = deepcopy(kp2_um)
+        self.state.kp_first_pose = []
+        for i in range(len(kp2_um)):
+            self.state.kp_first_pose.append(old_M2)
+        self.state.kp_first_pose = np.array(self.state.kp_first_pose)
+        self.state.kp_track_length = np.ones(len(kp2_um))
+        self.state.image = cur_img
+
+        # add landmarks to the history
+        cur_landmarks = [Landmark(points3d[i]) for i in range(len(points3d))]
+        for i in range(len(kp2)):
+            cur_landmarks[i].add_points(kp2[i], 1)
+        self.state.history["landmarks"][-1] = cur_landmarks
 
     def run(self):
         total_frames = self.dataloader.length
@@ -270,6 +484,15 @@ class VO_Pipeline:
         for frame_id in tqdm(range(init_frame_2+1, total_frames)):
             image = self.dataloader.getFrame(frame_id)
             self.processFrame(image)
+
+            # ---------------------------------------------------------------
+            # FOR BOOTSTRAPPING
+            # ---------------------------------------------------------------
+            if self.use_bootstrap:
+                if len(self.state.landmarks) < self.bootstrap_lm_threshold:
+                    prev_img = self.dataloader.getFrame(frame_id + self.bootstrap_index + 1)
+                    self.bootstrap(self.bootstrap_index, prev_img, image)
+                    # self.bootstrap_landmarks(self.bootstrap_index, prev_img, image)
 
 
 if __name__ == "__main__":

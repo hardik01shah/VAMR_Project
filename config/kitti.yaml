@@ -64,3 +64,9 @@ bundle_adjustment:
       # 'dogbox' : dogleg algorithm with rectangular trust regions, typical use case is small problems with bounds. Not recommended for problems with rank-deficient Jacobian.
       # 'lm' : Levenberg-Marquardt algorithm as implemented in MINPACK. Doesn't handle bounds and sparse Jacobians. Usually the most efficient method for small unconstrained problems.
     x_scale: 'jac'
+
+bootstrap:
+  use_bootstrap: False
+  bootstrap_index: 7 # Index of the frame to use as the first keyframe relative to the current frame
+  bootstrap_frequency: 20 # Number of frames between bootstrap calls
+  bootstrap_lm_threshold: 100 # Threshold for len of current landmarks to trigger bootstrap
