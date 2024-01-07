@@ -34,7 +34,7 @@ class FrameState:
         string += f"kp_first_pose: {self.kp_first_pose.shape}\n"
         string += f"kp_track_length: {self.kp_track_length.shape}\n"
         return string
-
+        
 class Landmark:
     def __init__(self, point_3d):
         self.point = point_3d
