@@ -98,18 +98,31 @@ Note: Bootstrapping and Bundle Adjustment cannot be used together.
 Note: the results are saved into a subfolder with the dataset name in the out/ folder 
 
 # Screencasts of the Datasets
+Visit the playlist on [Youtube](https://youtube.com/playlist?list=PLODC_vO4BYem3kVuExSkjXnDEG6MGsX7m&si=uLxIXTxs4RDzm3X0)
 ## Kitti
+### Without BA
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/7yigfi7p3LI/0.jpg)](http://www.youtube.com/watch?v=7yigfi7p3LI)
+### With BA
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/bieNxUnewwE/0.jpg)](http://www.youtube.com/watch?v=bieNxUnewwE)
 
 ## Malaga
+### Without BA
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/fzCBMkicLZY/0.jpg)](http://www.youtube.com/watch?v=fzCBMkicLZY)
+### With BA
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/aN683-zXpH0/0.jpg)](http://www.youtube.com/watch?v=aN683-zXpH0)
 
 ## Parking
+### Without BA
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/i9yv4T7ghO8/0.jpg)](http://www.youtube.com/watch?v=i9yv4T7ghO8)
+### With BA
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/WWKlx-NPzQ8/0.jpg)](http://www.youtube.com/watch?v=WWKlx-NPzQ8)
 
 ## Custom Dataset
 ### VO Result
+#### Without BA
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/Ynx1Ka45ENs/0.jpg)](http://www.youtube.com/watch?v=Ynx1Ka45ENs)
+#### With BA
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/0VpvS1eGNgo/0.jpg)](http://www.youtube.com/watch?v=0VpvS1eGNgo)
 
 ### RAW Video
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/abxF24q7mJU/0.jpg)](http://www.youtube.com/watch?v=abxF24q7mJU)
