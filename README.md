@@ -66,6 +66,22 @@ The data folder structure should be as follows.
 ```
 
 # Run the app
+Usage of the vo_pipeline.py file
+```
+usage: vo_pipeline.py [-h] [--dataset_dir DATASET_DIR] [--dataset_name DATASET_NAME] [--config CONFIG]
+
+Visual Odometry Pipeline
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --dataset_dir DATASET_DIR
+                        Path to the dataset directory
+  --dataset_name DATASET_NAME
+                        Name of the dataset: can be kitti, malaga, parking or own
+  --config CONFIG       Path to the config file: can be config/params.yaml, config/params_kitti.yaml, config/params_malaga.yaml,
+                        config/params_parking.yaml or config/params_own.yaml
+```
+
 Use the following python commands to run the vo pipeline for different datasets. Make sure to navigate to the folder root before running the commands.
 ```
 python3 vo_pipeline.py --dataset_name kitti --config config/kitti.yaml
