@@ -1,2 +1,12 @@
 data/*
 __pycache__/*
+plots/*
+vamr1.yaml
+malaga/*
+kitti/*
+parking/*
+own/*
+*.mp4
+.vscode/settings.json
+out
+*.zip
