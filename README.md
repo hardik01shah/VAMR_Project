@@ -3,9 +3,9 @@
 Report can be found [here]()
 
 # Team Members
-1. Hardik Shah
-2. Deepak Ganesh
-3. Aniruddha Sundararajan
+1. Hardik Shah (hashah@ethz.ch)
+2. Deepak Ganesh (dganesh@ethz.ch)
+3. Aniruddha Sundararajan (asundararaja@ethz.ch)
 4. Deepana Ishtaweera (dishtaweera@ethz.ch)
 
 # Tested on
@@ -38,11 +38,8 @@ unzip kitti05.zip
 wget -O malaga.zip https://rpg.ifi.uzh.ch/docs/teaching/2023/malaga-urban-dataset-extract-07.zip
 unzip malaga.zip
 mv malaga-urban-dataset-extract-07 malaga
-```
-
-To download the custom dataset,
-```
-
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=12IQMiJbkg5LW9epJfGxKL8U6VYO33fu7' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=12IQMiJbkg5LW9epJfGxKL8U6VYO33fu7" -O own.zip && rm -rf /tmp/cookies.txt
+unzip own.zip
 ```
 
 The data folder structure should be as follows.
@@ -74,7 +71,7 @@ Use the following python commands to run the vo pipeline for different datasets.
 python3 vo_pipeline.py --dataset_name kitti --config config/kitti.yaml
 python3 vo_pipeline.py --dataset_name parking --config config/parking.yaml
 python3 vo_pipeline.py --dataset_name malaga --config config/malaga.yaml
-python3 vo_pipeline.py --dataset_name own --config config/custom.yaml
+python3 vo_pipeline.py --dataset_name own --config config/own.yaml
 ```
 
 Note: the results are saved into a subfolder with the dataset name in the out/ folder 
