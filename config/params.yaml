@@ -37,7 +37,7 @@ feature_extractor:
     blockSize: 31
 
   sift:
-    nfeatures: 1000 
+    nfeatures: 1500 
     k: 2 # Number of best matches to retain
     dist_threshold: 0.8 # Threshold for the distance between matched descriptors.
 

@@ -237,11 +237,12 @@ class VO_Pipeline:
         # Adjust camera poses and landmarks using bundle adjustment
         if len(self.state.pose_history) % 20 == 0:
             poses_refined, landmarks_refined = self.BA.bundle_adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
-            self.state.pose_history[-10:] = poses_refined
-            self.state.landmarks_um = np.append(self.state.landmarks_um[:self.state.last_ba_call], landmarks_refined, axis=0)
-            self.state.last_ba_call = len(self.state.landmarks_um)
-        #     print(landmarks_refined.shape)
-        #     self.visualizer.view3DPoints(landmarks_refined, poses_refined)
+            print("BA called")
+            print(len(self.state.pose_history))
+            self.state.pose_history[-len(poses_refined):] = poses_refined
+            # self.state.landmarks_um = np.append(self.state.landmarks_um[:self.state.last_ba_call], landmarks_refined, axis=0)
+            # self.state.last_ba_call = len(self.state.landmarks_um)
+
         
 
         # Visualize the state
