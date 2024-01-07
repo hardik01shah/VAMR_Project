@@ -1,15 +1,19 @@
 # Vision Algorithms for Mobile Robotics (VAMR) Mini project
 
+Report can be found [here]()
+
 # Team Members
 1. Hardik Shah
 2. Deepak Ganesh
 3. Aniruddha Sundararajan
-4. Deepana Ishtaweera
+4. Deepana Ishtaweera (dishtaweera@ethz.ch)
 
-# Tested On
-Linux x86 PC  
-RAM:  
-CPU:   
+# Tested on
+Screencasts were recorded on, 
+ROG Zephyrus G15 GA503 GA503QM-HQ121R    
+OS: Ubuntu 22.04  
+CPU: 3.0 GHz AMD Ryzen 9 5900HS  
+RAM: 16 GB 3200MHz  
 
 # Steps to setup
 Note: make sure you have miniconda3/ anaconda installed and working in the terminal  
@@ -19,6 +23,7 @@ conda env create -f python_env/conda_config.yaml
 ```
 
 # Download the datasets
+Use the following commands to download the benchmark datasets.
 ```
 mkdir data && cd data
 wget -O parking.zip https://rpg.ifi.uzh.ch/docs/teaching/2023/parking.zip
@@ -28,6 +33,34 @@ unzip kitti05.zip
 wget -O malaga.zip https://rpg.ifi.uzh.ch/docs/teaching/2023/malaga-urban-dataset-extract-07.zip
 unzip malaga.zip
 mv malaga-urban-dataset-extract-07 malaga
+```
+
+To download the custom dataset,
+```
+
+```
+
+The data folder structure should be as follows.
+```
+├── data
+│   ├── kitti
+│   │   ├──05
+│   │   │   ├── image_0
+│   │   │   │   ├── ...
+│   │   │   ├── image_1
+│   │   │   │   ├── ...
+│   │   │   ├── calib.txt
+│   │   │   ├── times.txt
+│   │   ├──poses
+│   │   │   ├── ...
+│   ├── malaga
+│   │   ├── ...
+│   ├── parking
+│   │   ├──images
+│   │   ├──K.txt
+│   │   ├──poses.txt
+│   ├── custom
+│   │   ├── ...
 ```
 
 # Run the app
@@ -61,43 +94,3 @@ Note: the results are saved into a subfolder with the dataset name in the out/ f
 ### Calibration Video
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/8JlmjzX1FCE/0.jpg)](http://www.youtube.com/watch?v=8JlmjzX1FCE)
 
-# File Structure
-```
-├── config
-│   ├── kitti.yaml
-│   ├── malaga.yaml
-│   ├── parking.yaml
-│   ├── custom.yaml
-├── data
-│   ├── kitti
-│   │   ├──...
-│   ├── malaga
-│   │   ├──...
-│   ├── parking
-│   │   ├──...
-│   ├── custom
-│   │   ├──...
-├── out
-│   ├── kitti
-│   │   ├──...
-│   ├── malaga
-│   │   ├──...
-│   ├── parking
-│   │   ├──...
-│   ├── custom
-│   │   ├──...
-├── python_env
-│   ├── conda_mac.yml
-│   ├── conda_ubuntu_x64.yml
-│   └── requirements.txt
-|── create_video.py
-|── data_loader.py
-├── dev.py
-├── estimate_campose.py
-├── feature_extractor.py
-├── frame_state.py
-├── klt_tracker.py
-├── visualizer.py
-├── vo_pipeline.py
-└── vo_project_statement.pdf
-```
