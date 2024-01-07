@@ -64,7 +64,7 @@ The data folder structure should be as follows.
 │   │   ├──images
 │   │   ├──K.txt
 │   │   ├──poses.txt
-│   ├── custom
+│   ├── own
 │   │   ├── ...
 ```
 
