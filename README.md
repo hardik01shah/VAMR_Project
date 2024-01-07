@@ -90,6 +90,11 @@ python3 vo_pipeline.py --dataset_name malaga --config config/malaga.yaml
 python3 vo_pipeline.py --dataset_name own --config config/own.yaml
 ```
 
+To activate Bundle Adjustment, change the `use_ba` flag to `True` in the configs.
+To activate Bootstrapping when landmarks go below a threshold, change the `use_bootstrap` flag to `True` in the configs. 
+
+Note: Bootstrapping and Bundle Adjustment cannot be used together.
+
 Note: the results are saved into a subfolder with the dataset name in the out/ folder 
 
 # Screencasts of the Datasets
