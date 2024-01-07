@@ -46,7 +46,7 @@ class VO_Pipeline:
         self.pose_estimator = CamPoseEstimator(self.K, pose_estimator_params)
 
         # Initialize Bundle Adjuster
-        self.BA = BundleAdjuster(self.K)
+        self.BA = BundleAdjuster(self.K, self.params["bundle_adjustment"]["ba_params"])
 
         self.state = None
 
@@ -85,7 +85,7 @@ class VO_Pipeline:
         self.visualizer.view3DPoints(points3d, cam_poses)
 
         # initialize the state
-        self.state = FrameState()
+        self.state = FrameState(self.params["bundle_adjustment"])
         self.state.pose_history.append(M1)
         self.state.pose_history.append(M2)
         self.state.landmarks = points3d
@@ -132,13 +132,16 @@ class VO_Pipeline:
         kp1 = kp1[inlier_mask]
         kp2 = kp2[inlier_mask]
         
+        # ---------------------------------------------------------------
         # FOR BUNDLE ADJUSTMENT
+        # ---------------------------------------------------------------
         # Separating the landmarks that are inlier and outliers
         # Outliers are saved in the state history at first and inliers are added to the state later 
         # along with newly triangulated landmarks
         landmarks_ba_inlier = np.asarray(self.state.history["landmarks"][-1])[inlier_mask] 
         landmarks_ba_outlier = np.asarray(self.state.history["landmarks"][-1])[~inlier_mask]
         self.state.history["landmarks"][-1] = list(landmarks_ba_outlier) 
+        # ---------------------------------------------------------------
 
         # estimate camera pose of the current frame
         M1 = self.state.pose_history[-1]    # (3, 4)
@@ -150,11 +153,14 @@ class VO_Pipeline:
         kp2 = kp2[inlier_mask]
         landmarks = landmarks[inlier_mask]
 
+        # ---------------------------------------------------------------
         # FOR BUNDLE ADJUSTMENT
+        # ---------------------------------------------------------------
         # Separating the landmarks that are inlier and outliers again
         self.state.history["landmarks"][-1] += list(landmarks_ba_inlier[~inlier_mask])
         landmarks_ba_inlier = landmarks_ba_inlier[inlier_mask]
-        
+        # ---------------------------------------------------------------
+                
         # add new pose to the pose history
         self.state.pose_history.append(M2)
 
@@ -191,6 +197,9 @@ class VO_Pipeline:
         self.state.kp_track_length = extended_tracks["kp_track_length"]
         self.state.image = image
 
+        # ---------------------------------------------------------------
+        # FOR BUNDLE ADJUSTMENT
+        # ---------------------------------------------------------------
         # Adding tracked inlier landmarks and newly triangulated landmarks to the state history (along with keypoints)
         landmarks_list1 = []
         landmarks_list2 = []
@@ -202,18 +211,9 @@ class VO_Pipeline:
         for i in range(len(landmarks_list2)):
             landmarks_list2[i].add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)-2)
 
-        # landmarks_list += [Landmark(extended_tracks["landmarks"][i]).add_points(extended_tracks["landmarks_kp"][i], len(self.state.pose_history)-2) 
-        #                     for i in range(len(extended_tracks["landmarks"]))]
-        # Add landmarks, keypoints and the camera poses to the history for bundle adjustment
         self.state.history["camera_poses"].append(self.state.pose_history[-1])
         self.state.history["landmarks"].append(landmarks_list1+landmarks_list2)
-
-        # landmarks_list_check = [l for landmarks in list(self.state.history["landmarks"]) for l in landmarks]
-        # points_viz = np.zeros((len(landmarks_list_check), 3))
-        # for i, landmarks in enumerate(landmarks_list_check):
-        #     points_viz[i] = landmarks.point
-        # len_cam_poses = len(self.state.history["camera_poses"])
-        # self.visualizer.view3DPoints(points_viz, list(itertools.islice(self.state.history["camera_poses"], len_cam_poses-1)))
+        # ---------------------------------------------------------------
 
         # Extract new features to add to the candidate keypoints
         current_keypoints = np.append(self.state.triangulated_kp, self.state.candidate_kp, axis=0)
@@ -234,32 +234,31 @@ class VO_Pipeline:
         self.state.landmark_history.append(len(self.state.landmarks))
         self.state.landmarks_um = np.append(self.state.landmarks_um, landmarks_um, axis=0)
 
+        # ---------------------------------------------------------------
+        # FOR BUNDLE ADJUSTMENT
+        # ---------------------------------------------------------------
         # Adjust camera poses and landmarks using bundle adjustment
-        if len(self.state.pose_history) % 20 == 0:
-            poses_refined, landmarks_refined = self.BA.bundle_adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
-            print("BA called")
-            print(len(self.state.pose_history))
+        if len(self.state.pose_history) % 30 == 0:
+            poses_refined, landmarks_refined, _ = self.BA.bundle_adjust(self.state.history["camera_poses"], self.state.history["landmarks"])
             self.state.pose_history[-len(poses_refined):] = poses_refined
-            # self.state.landmarks_um = np.append(self.state.landmarks_um[:self.state.last_ba_call], landmarks_refined, axis=0)
-            # self.state.last_ba_call = len(self.state.landmarks_um)
+            self.state.landmarks_um = np.append(self.state.landmarks_um[:self.state.last_ba_call], landmarks_refined, axis=0)
+            self.state.last_ba_call = len(self.state.landmarks_um)
+        # ---------------------------------------------------------------
 
-        
 
         # Visualize the state
         self.visualizer.viewVOPipeline(self.state)
 
-
     def run(self):
         total_frames = self.dataloader.length
         init_frame_1 = self.params["init_frame_1"]
-        init_frame_2 = self.params["init_frame_2"] # 3 for parking, 2 for malaga and kitti
+        init_frame_2 = self.params["init_frame_2"]
 
         # Initialize the pipeline
         self.vo_initilization(init_frame_1, init_frame_2)
 
         # Process the remaining frames
         for frame_id in tqdm(range(init_frame_2+1, total_frames)):
-        # for frame_id in range(init_frame_2+1, total_frames):
             image = self.dataloader.getFrame(frame_id)
             self.processFrame(image)
 
@@ -270,9 +269,10 @@ if __name__ == "__main__":
     # Create argparser
     parser = argparse.ArgumentParser(description="Visual Odometry Pipeline")
     parser.add_argument("--dataset_dir", type=str, default=os.path.join(cur_dir, "data"), help="Path to the dataset directory")
-    parser.add_argument("--dataset_name", type=str, default="kitti", help="Name of the dataset")
-    parser.add_argument("--sequence_name", type=str, default="05", help="Name of the sequence")
-    parser.add_argument("--config", type=str, default="config/params.yaml", help="Path to the config file")
+    parser.add_argument("--dataset_name", type=str, default="kitti", help="Name of the dataset: can be kitti, malaga, parking or own")
+    parser.add_argument("--config", type=str, default="config/params.yaml", 
+            help="Path to the config file: can be config/params.yaml, config/params_kitti.yaml, config/params_malaga.yaml, config/params_parking.yaml or config/params_own.yaml")
+    
     args = parser.parse_args()
 
     dataset_dir = args.dataset_dir
@@ -287,6 +287,5 @@ if __name__ == "__main__":
     elif dataset_name == "own": dataloader = OwnDataLoader(dataset_dir)
     
     # Load the dataset
-    # dataloader = DatasetLoader(dataset_dir, dataset_name, sequence_name)
     vo_pipeline = VO_Pipeline(dataloader, config_file)
     vo_pipeline.run()

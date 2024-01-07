@@ -50,3 +50,11 @@ feature_extractor:
       epsilon: 0.03
     dist_threshold: 30 # Threshold for the distance between tracked features.
     max_bidirec_error: 30 # Maximum backward error to check in the tracking stage. 
+
+bundle_adjustment:
+  ba_frame_length: 5 # Number of frames in the past to use for bundle adjustment
+  ba_params:
+    verbose: 2
+    ftol: 1e-2
+    method: 'trf'
+    x_scale: 'jac'

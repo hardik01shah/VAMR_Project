@@ -7,9 +7,15 @@ import cv2
 from visualizer import Visualizer
 
 class BundleAdjuster:
-    def __init__(self, K):
+    
+    def __init__(self, K, params):
+        
         self.K = K
         self.visualizer = Visualizer()
+        self.x_scale = params["x_scale"]
+        self.ftol = params["ftol"]
+        self.method = params["method"]
+        self.verbose = params["verbose"]
 
     def convert_to_bundle_adjust_format(self, pose_history, landmarks_history):
         """
@@ -39,9 +45,7 @@ class BundleAdjuster:
         points_2d = []
 
         print("n_cameras: ", n_cameras)
-        print("n_points: ", n_points)
-        print("len(landmarks): ", len(landmarks_list))
-        print("Cam pose shape", cam_poses.shape)
+        print("n_landmarks: ", len(landmarks_list))
 
         for i, pose in enumerate(cam_poses):
             # Extract rotation and translation from pose
@@ -124,9 +128,19 @@ class BundleAdjuster:
 
         
     def fun(self, params, n_cameras, n_points, camera_indices, point_indices, points_2d):
-        """Compute residuals.
+        """
+        Calculates the residual error between the projected 3D points and the observed 2D points.
 
-        `params` contains camera parameters and 3-D coordinates.
+        Args:
+            params (ndarray): Array of camera parameters and 3D points.
+            n_cameras (int): Number of cameras.
+            n_points (int): Number of 3D points.
+            camera_indices (ndarray): Array of camera indices for each point.
+            point_indices (ndarray): Array of point indices for each camera.
+            points_2d (ndarray): Array of observed 2D points.
+
+        Returns:
+            ndarray: Residual error between the projected 3D points and the observed 2D points.
         """
         camera_params = params[:n_cameras * 9].reshape((n_cameras, 9))
         camera_poses = self.get_hom_trans(camera_params)
@@ -136,6 +150,18 @@ class BundleAdjuster:
         return (points_proj-points_2d).ravel()
     
     def bundle_adjustment_sparsity(self, n_cameras, n_points, camera_indices, point_indices):
+        """
+        Compute the sparsity pattern of the Jacobian matrix for bundle adjustment.
+
+        Parameters:
+        - n_cameras (int): Number of cameras.
+        - n_points (int): Number of 3D points.
+        - camera_indices (ndarray): Array of camera indices.
+        - point_indices (ndarray): Array of point indices.
+
+        Returns:
+        - A (lil_matrix): Sparse matrix representing the sparsity pattern of the Jacobian matrix.
+        """
         
         m = camera_indices.size * 2
         n = n_cameras * 9 + n_points * 3
@@ -154,8 +180,17 @@ class BundleAdjuster:
 
 
     def bundle_adjust(self, pose_history, landmarks_history):
-        """Perform bundle adjustment"""
-        # ... implementation of the bundle adjustment ...
+        """
+        Perform bundle adjustment to optimize camera poses and 3D landmark positions.
+
+        Args:
+            pose_history (list): List of camera poses.
+            landmarks_history (list): List of landmarks observed in each frame.
+
+        Returns:
+            Optimized camera poses (numpy.ndarray)
+            Optimized 3D landmark positions (numpy.ndarray)
+        """
 
         # Convert the data to the format required by the bundle adjustment function
         camera_params, _, points_3d, camera_ind, point_ind, points_2d = self.convert_to_bundle_adjust_format(pose_history, landmarks_history)
@@ -166,23 +201,13 @@ class BundleAdjuster:
         x0 = np.hstack((camera_params.ravel(), points_3d.ravel()))
         f0 = self.fun(x0, n_cameras, n_points, camera_ind, point_ind, points_2d)
 
-        # plt.plot(f0)
-        # plt.show()
-
         A = self.bundle_adjustment_sparsity(n_cameras, n_points, camera_ind, point_ind)
 
         res = least_squares(self.fun, x0, jac_sparsity=A, verbose=2, x_scale='jac', ftol=1e-2, method='trf',
                             args=(n_cameras, n_points, camera_ind, point_ind, points_2d))
-        # res = least_squares(self.fun, x0, verbose=2, loss='linear', xtol=1e-1, ftol=1e-2, method='lm',
-        #             args=(n_cameras, n_points, camera_ind, point_ind, points_2d))
-        
-        # plt.plot(res.fun)
-        # plt.show()
 
         camera_params = res.x[:n_cameras * 9].reshape((n_cameras, 9))
         camera_poses = self.get_hom_trans(camera_params)
         points_3d = res.x[n_cameras * 9:].reshape((n_points, 3))
-
-        # self.visualizer.view3DPoints(points_3d, camera_poses)
 
         return camera_poses, points_3d

@@ -15,10 +15,12 @@ class VideoProcessor:
         self.out_vid = cv2.VideoWriter(outpath, cv2.VideoWriter_fourcc(*'MP4V'), 25, (1200, 600))
 
     def process_video(self, image_dir):
+        """
+        Process a sequence of images in the given directory and create a video.
 
-        # Process a video file frame by frame and detect faces using Amazon Rekognition.
-        # Write the output video file with bounding boxes around the faces.
-
+        Args:
+            image_dir (str): The directory path containing the input images.
+        """
         image_list = glob.glob(os.path.join(image_dir, "*.png"))
         num_images = len(image_list)
 

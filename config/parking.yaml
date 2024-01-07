@@ -50,3 +50,15 @@ feature_extractor:
       epsilon: 0.03
     dist_threshold: 30 # Threshold for the distance between tracked features.
     max_bidirec_error: 30 # Maximum backward error to check in the tracking stage. 
+
+bundle_adjustment:
+  ba_frame_length: 5 # Number of frames in the past to use for bundle adjustment
+  ba_params:
+    verbose: 2 # 0 for no output, 1 for only final message, 2 for iteration info
+    ftol: 1e-2 # Precision goal for the value of f in the stopping criterion.
+    method: 'trf' 
+    # Method to use in the optimization. Should be one of
+      # 'trf' : Trust Region Reflective algorithm, particularly suitable for large sparse problems with bounds. Generally robust method.
+      # 'dogbox' : dogleg algorithm with rectangular trust regions, typical use case is small problems with bounds. Not recommended for problems with rank-deficient Jacobian.
+      # 'lm' : Levenberg-Marquardt algorithm as implemented in MINPACK. Doesn't handle bounds and sparse Jacobians. Usually the most efficient method for small unconstrained problems.
+    x_scale: 'jac'
