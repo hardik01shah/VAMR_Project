@@ -16,10 +16,15 @@ CPU: 3.0 GHz AMD Ryzen 9 5900HS
 RAM: 16 GB 3200MHz  
 
 # Steps to setup
+## Setting up conda environment
 Note: make sure you have miniconda3/ anaconda installed and working in the terminal  
 Note: first navigate into the folder  
 ```
-conda env create -f python_env/conda_config.yaml
+conda env create -f python_env/conda_config.yml
+```
+## Optional: using pyenv virtual environment
+```
+pip3 install -r python_env/requirements.txt
 ```
 
 # Download the datasets
