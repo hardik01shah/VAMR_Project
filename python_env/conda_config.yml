@@ -22,5 +22,3 @@ dependencies:
       - pandas==2.1.4
       - tqdm==4.66.1
       - pyyaml==6.0.1
-
-prefix: /Users/$USER/miniconda3/envs/vamr
