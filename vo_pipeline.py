@@ -488,10 +488,10 @@ class VO_Pipeline:
             # ---------------------------------------------------------------
             # FOR BOOTSTRAPPING
             # ---------------------------------------------------------------
-            if self.use_bootstrap:
+            if self.use_bootstrap and (frame_id - 2*init_frame_2) > self.bootstrap_index:
                 if len(self.state.landmarks) < self.bootstrap_lm_threshold:
-                    prev_img = self.dataloader.getFrame(frame_id + self.bootstrap_index + 1)
-                    self.bootstrap(self.bootstrap_index, prev_img, image)
+                    prev_img = self.dataloader.getFrame(frame_id - self.bootstrap_index + 1)
+                    self.bootstrap(-self.bootstrap_index, prev_img, image)
                     # self.bootstrap_landmarks(self.bootstrap_index, prev_img, image)
 
 
