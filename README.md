@@ -98,7 +98,7 @@ Note: Bootstrapping and Bundle Adjustment cannot be used together.
 Note: the results are saved into a subfolder with the dataset name in the out/ folder 
 
 # Screencasts of the Datasets
-Visit the playlist on [Youtube](https://youtube.com/playlist?list=PLODC_vO4BYem3kVuExSkjXnDEG6MGsX7m&si=uLxIXTxs4RDzm3X0)
+Here are the video demonstrations showcasing the monocular visual odometry pipeline. Our approaches have been evaluated using three widely recognized datasets: Parking, Kitti, Malaga, and an additional dataset that we generated ourselves. Visit the playlist on [Youtube](https://youtube.com/playlist?list=PLODC_vO4BYem3kVuExSkjXnDEG6MGsX7m&si=uLxIXTxs4RDzm3X0).
 ## Kitti
 ### Without BA
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/7yigfi7p3LI/0.jpg)](http://www.youtube.com/watch?v=7yigfi7p3LI)
